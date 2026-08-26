@@ -1,6 +1,6 @@
 {
   "name": "HOMESTECH - Quản Lý Phòng Trọ",
-  "short_name": "HOMESTECH",
+  "short_name": "Quản Lý Phòng Trọ",
   "description": "Hệ thống quản lý phòng trọ, tính tiền và lưu trú thông minh HOMESTECH",
   "start_url": "./index.html",
   "display": "standalone",
