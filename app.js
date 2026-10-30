@@ -1,3 +1,412 @@
+Dưới đây là bộ mã nguồn hoàn chỉnh và đầy đủ nhất cho cả 3 file: index.html, app.js và manifest.json.
+Tất cả đã được đồng bộ hóa 100% theo nhận diện thương hiệu HOMESTECH, khắc phục hoàn toàn lỗi nợ cũ, bổ sung Đính kèm ảnh CCCD 2 mặt (tự động nén lưu Firebase), Tạo Hợp đồng thuê phòng tự động (In / Xuất PDF), Sổ Quỹ Thu - Chi, cùng đầy đủ các tính năng PWA.
+1. File manifest.json
+Tạo file manifest.json trong cùng thư mục với index.html:
+{
+  "name": "HOMESTECH - Quản Lý Phòng Trọ",
+  "short_name": "HOMESTECH",
+  "description": "Hệ thống quản lý phòng trọ, tính tiền và lưu trú thông minh HOMESTECH",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./logo.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
+2. File index.html (Đầy đủ 100%)
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HOMESTECH - Quản Lý Phòng Trọ Cao Cấp</title>
+
+    <!-- PWA & ICON CONFIG -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HOMESTECH">
+    <link rel="icon" type="image/svg+xml" href="./logo.svg">
+    <link rel="apple-touch-icon" href="./logo.svg">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .safe-area-bottom { padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem); }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        /* Style tối ưu khi in hoặc xuất PDF Hợp đồng thuê */
+        @media print {
+            body * { visibility: hidden; }
+            #printableContract, #printableContract * { visibility: visible; }
+            #printableContract {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 20px;
+                background: white !important;
+                color: black !important;
+            }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex justify-center selection:bg-indigo-500 selection:text-white">
+
+    <div class="w-full max-w-lg min-h-screen bg-slate-50 flex flex-col shadow-2xl relative">
+        
+        <!-- HEADER HOMESTECH -->
+        <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 sticky top-0 z-30 flex justify-between items-center">
+            <div class="flex items-center gap-2.5">
+                <img src="./logo.svg" alt="HOMESTECH" class="w-9 h-9 rounded-xl shadow-md shadow-indigo-100 object-cover">
+                <div>
+                    <h1 class="font-black text-slate-800 text-sm leading-tight tracking-tight">HOMESTECH</h1>
+                    <p class="text-[9px] font-bold text-indigo-600 uppercase tracking-wider">PMS Manager 2026</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-1.5">
+                <!-- Nút Tạo Phiếu Thu/Chi Nhanh -->
+                <button onclick="openTransactionModal()" title="Tạo phiếu thu chi" class="bg-amber-50 text-amber-600 hover:bg-amber-100 w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold active:scale-95 transition-all">
+                    <i class="fa-solid fa-money-bill-transfer text-sm"></i>
+                </button>
+                <button onclick="sendTelegramBroadcast()" title="Gửi thông báo Telegram" class="bg-sky-50 text-sky-600 hover:bg-sky-100 w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold transition-all">
+                    <i class="fa-brands fa-telegram text-sm"></i>
+                </button>
+                <button onclick="openModal('add-room')" class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-xl shadow-md shadow-indigo-100 transition-all">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span>Phòng</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- NỘI DUNG CHÍNH (MAIN TABS) -->
+        <main class="flex-1 p-4 pb-28">
+
+            <!-- TAB 1: DASHBOARD (TỔNG QUAN) -->
+            <div id="view-dashboard" class="space-y-4">
+                <div class="bg-gradient-to-br from-indigo-700 via-indigo-600 to-blue-600 rounded-3xl p-5 text-white shadow-xl shadow-indigo-100 space-y-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Lợi nhuận ròng (Thu - Chi)</span>
+                            <h2 id="dash-net-profit" class="text-2xl font-black mt-0.5 tracking-tight">0đ</h2>
+                        </div>
+                        <span class="bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-wide">
+                            <i class="fa-solid fa-arrow-trend-up mr-1 text-emerald-300"></i>Online
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 pt-3 border-t border-white/15 text-xs">
+                        <div>
+                            <p class="text-[9px] text-indigo-200 font-medium uppercase">Tổng tiền thu</p>
+                            <p id="dash-real-revenue" class="font-extrabold text-emerald-300 text-xs mt-0.5">0đ</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] text-indigo-200 font-medium uppercase">Tổng tiền chi</p>
+                            <p id="dash-total-expense" class="font-extrabold text-rose-300 text-xs mt-0.5">0đ</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] text-indigo-200 font-medium uppercase">Công nợ</p>
+                            <p id="dash-unpaid-revenue" class="font-extrabold text-amber-300 text-xs mt-0.5">0đ</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thẻ thống kê chi tiết -->
+                <div class="grid grid-cols-4 gap-2">
+                    <div class="bg-white p-2.5 rounded-2xl border border-slate-200/70 shadow-sm text-center">
+                        <span class="text-[9px] font-bold text-slate-400 uppercase block">Tổng phòng</span>
+                        <span id="stat-total" class="text-sm font-black text-slate-700">0</span>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-2xl border border-indigo-100 shadow-sm text-center bg-indigo-50/20">
+                        <span class="text-[9px] font-bold text-indigo-600 uppercase block">Đang ở</span>
+                        <span id="stat-occupied" class="text-sm font-black text-indigo-600">0</span>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-2xl border border-emerald-100 shadow-sm text-center bg-emerald-50/20">
+                        <span class="text-[9px] font-bold text-emerald-600 uppercase block">Trống</span>
+                        <span id="stat-empty" class="text-sm font-black text-emerald-600">0</span>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-2xl border border-amber-100 shadow-sm text-center bg-amber-50/20">
+                        <span class="text-[9px] font-bold text-amber-600 uppercase block">Đã cọc</span>
+                        <span id="stat-deposit" class="text-sm font-black text-amber-600">0</span>
+                    </div>
+                </div>
+
+                <!-- Danh sách nhắc việc / Cảnh báo sắp đến hạn thu tiền -->
+                <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-extrabold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-bell text-amber-500"></i>
+                            <span>Cảnh báo thu tiền phòng</span>
+                        </h3>
+                        <span id="due-count-badge" class="bg-rose-100 text-rose-600 px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase">0 phòng</span>
+                    </div>
+                    <div id="dueRoomsList" class="space-y-2">
+                        <p class="text-[11px] text-slate-400 text-center py-2 font-medium">Không có phòng nào sắp đến hạn đóng tiền</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: SƠ ĐỒ PHÒNG -->
+            <div id="view-rooms" class="hidden space-y-4">
+                <div class="flex items-center justify-between px-1">
+                    <div>
+                        <h2 class="font-extrabold text-slate-800 text-sm">Sơ đồ tình trạng phòng</h2>
+                        <p class="text-[10px] text-slate-400 font-semibold uppercase">Theo dõi trực quan thời gian thực</p>
+                    </div>
+                    <div class="flex items-center gap-2 text-[9px] font-bold text-slate-500">
+                        <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md"><span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>Ở</span>
+                        <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Trống</span>
+                        <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Cọc</span>
+                    </div>
+                </div>
+
+                <div id="roomGrid" class="grid grid-cols-2 gap-3"></div>
+            </div>
+
+            <!-- TAB 3: TÍNH TIỀN / CHỐT SỔ -->
+            <div id="view-finance" class="hidden space-y-4"></div>
+
+            <!-- TAB 4: LỊCH SỬ HÓA ĐƠN -->
+            <div id="view-tenants" class="hidden space-y-4">
+                <div class="flex justify-between items-center px-1">
+                    <div>
+                        <h2 class="font-extrabold text-slate-800 text-sm">Quản lý hóa đơn</h2>
+                        <p class="text-[10px] text-slate-400 font-semibold uppercase">Tra cứu, in phiếu thu & công nợ</p>
+                    </div>
+                    <button onclick="exportMonthBillsCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase shadow-sm flex items-center gap-1 active:scale-95 transition-all">
+                        <i class="fa-solid fa-file-excel"></i> Xuất Excel
+                    </button>
+                </div>
+
+                <!-- Bộ lọc hóa đơn -->
+                <div class="bg-white p-3.5 rounded-3xl shadow-sm border border-slate-200/80 space-y-3">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="searchBill" oninput="filterBills()" placeholder="Tìm số phòng, tên khách thuê..." 
+                            class="w-full pl-9 pr-3 py-2.5 bg-slate-50 rounded-2xl border border-slate-200/80 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all">
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setQuickFilter('thisMonth')" id="btn-flt-thisMonth" class="py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-bold uppercase transition-all">Tháng này</button>
+                        <button onclick="setQuickFilter('unpaid')" id="btn-flt-unpaid" class="py-2 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold uppercase transition-all">Còn nợ</button>
+                        <button onclick="setQuickFilter('all')" id="btn-flt-all" class="py-2 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold uppercase transition-all">Tất cả</button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                        <select id="billFilterMonth" onchange="filterBills()" class="p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 outline-none">
+                            <option value="">-- Tất cả các tháng --</option>
+                            <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
+                            <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+                            <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
+                            <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+                        </select>
+                        <select id="billFilterStatus" onchange="filterBills()" class="p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 outline-none">
+                            <option value="">-- Tất cả trạng thái --</option>
+                            <option value="unpaid">Chưa thu (Còn nợ)</option>
+                            <option value="paid">Đã thanh toán</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Danh sách Hóa đơn -->
+                <div id="tenantList" class="space-y-3"></div>
+            </div>
+
+            <!-- TAB 5: TRUNG TÂM CÀI ĐẶT -->
+            <div id="view-settings" class="hidden space-y-4">
+                <div class="px-1">
+                    <h2 class="font-extrabold text-slate-800 text-base">Trung tâm cấu hình</h2>
+                    <p class="text-[10px] text-slate-400 font-semibold uppercase">Thiết lập đơn giá, phòng trọ, sổ quỹ thu chi & thông báo</p>
+                </div>
+
+                <!-- Sub-nav chuyển đổi các mục cài đặt -->
+                <div class="flex bg-slate-200/70 p-1 rounded-2xl gap-1 text-[11px] font-bold">
+                    <button onclick="switchSettingSubTab('services')" id="subtab-services" class="flex-1 py-2 rounded-xl bg-white text-indigo-600 shadow-sm transition-all text-center">Dịch vụ</button>
+                    <button onclick="switchSettingSubTab('rooms_mgr')" id="subtab-rooms_mgr" class="flex-1 py-2 rounded-xl text-slate-500 transition-all text-center">Phòng</button>
+                    <button onclick="switchSettingSubTab('ledger')" id="subtab-ledger" class="flex-1 py-2 rounded-xl text-slate-500 transition-all text-center">Sổ Thu/Chi</button>
+                    <button onclick="switchSettingSubTab('telegram')" id="subtab-telegram" class="flex-1 py-2 rounded-xl text-slate-500 transition-all text-center">Telegram</button>
+                    <button onclick="switchSettingSubTab('template')" id="subtab-template" class="flex-1 py-2 rounded-xl text-slate-500 transition-all text-center">Mẫu gửi</button>
+                </div>
+
+                <!-- Section 1: Quản lý chi phí & Dịch vụ -->
+                <div id="setting-sec-services" class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-600 uppercase">Đơn giá áp dụng</span>
+                        <button onclick="openConfigModal()" class="bg-indigo-600 text-white px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase shadow-sm">
+                            <i class="fa fa-plus mr-1"></i>Thêm dịch vụ
+                        </button>
+                    </div>
+                    <div id="configContainer" class="grid grid-cols-2 gap-2.5"></div>
+                    <button onclick="saveSettings()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold uppercase text-xs shadow-md active:scale-98 transition-all">
+                        <i class="fa-solid fa-floppy-disk mr-1.5"></i>Lưu thay đổi đơn giá
+                    </button>
+                </div>
+
+                <!-- Section 2: Quản lý phòng -->
+                <div id="setting-sec-rooms_mgr" class="hidden space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-600 uppercase">Danh sách phòng hiện có</span>
+                        <button onclick="openModal('add-room')" class="bg-indigo-600 text-white px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase shadow-sm">
+                            <i class="fa fa-plus mr-1"></i>Thêm mới
+                        </button>
+                    </div>
+                    <div id="roomsManageContainer" class="space-y-2"></div>
+                </div>
+
+                <!-- Section 3: Sổ Quỹ Thu Chi -->
+                <div id="setting-sec-ledger" class="hidden space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-600 uppercase">Lịch sử phiếu Thu / Chi</span>
+                        <button onclick="openTransactionModal()" class="bg-indigo-600 text-white px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase shadow-sm">
+                            <i class="fa fa-plus mr-1"></i>Tạo phiếu
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="bg-emerald-50 border border-emerald-100 p-3 rounded-2xl">
+                            <span class="text-[9px] font-bold text-emerald-600 uppercase block">Tổng Thu Ngoài</span>
+                            <span id="ledger-total-income" class="text-xs font-black text-emerald-700">0đ</span>
+                        </div>
+                        <div class="bg-rose-50 border border-rose-100 p-3 rounded-2xl">
+                            <span class="text-[9px] font-bold text-rose-600 uppercase block">Tổng Chi Phí</span>
+                            <span id="ledger-total-expense" class="text-xs font-black text-rose-700">0đ</span>
+                        </div>
+                    </div>
+
+                    <div id="transactionsList" class="space-y-2"></div>
+                </div>
+
+                <!-- Section 4: Cấu hình Telegram Notification -->
+                <div id="setting-sec-telegram" class="hidden space-y-3">
+                    <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-brands fa-telegram text-sky-500 text-xl"></i>
+                            <div>
+                                <h4 class="font-extrabold text-xs text-slate-800">Thông báo qua Telegram Bot</h4>
+                                <p class="text-[9px] text-slate-400 font-medium">Nhận cảnh báo hạn đóng tiền phòng tự động</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 pt-2">
+                            <div class="space-y-1">
+                                <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">Telegram Bot Token</label>
+                                <input type="text" id="cfg-tele-token" placeholder="Ví dụ: 612345678:AAFn..." class="w-full p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs font-semibold outline-none">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">Telegram Chat ID</label>
+                                <input type="text" id="cfg-tele-chatid" placeholder="Ví dụ: -1001234567 hoặc 98765432" class="w-full p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs font-semibold outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 pt-2">
+                            <button onclick="testTelegramMessage()" class="py-2.5 bg-sky-50 text-sky-600 hover:bg-sky-100 rounded-xl text-xs font-bold transition-all">Gửi thử nghiệm</button>
+                            <button onclick="saveTelegramSettings()" class="py-2.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl text-xs font-bold shadow-sm transition-all">Lưu cài đặt</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 5: Cấu hình Mẫu tin nhắn -->
+                <div id="setting-sec-template" class="hidden space-y-3">
+                    <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
+                        <h4 class="font-extrabold text-xs text-slate-800">Mẫu tin nhắn gửi khách (Zalo / SMS)</h4>
+                        <p class="text-[10px] text-slate-400 leading-relaxed">Hỗ trợ các biến tự động: <code class="bg-indigo-50 text-indigo-600 px-1 py-0.5 rounded font-bold">{ten}</code>, <code class="bg-indigo-50 text-indigo-600 px-1 py-0.5 rounded font-bold">{phong}</code>, <code class="bg-indigo-50 text-indigo-600 px-1 py-0.5 rounded font-bold">{thang}</code>, <code class="bg-indigo-50 text-indigo-600 px-1 py-0.5 rounded font-bold">{tien}</code></p>
+                        
+                        <textarea id="cfg-bill-template" rows="5" class="w-full p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs font-medium text-slate-700 outline-none"></textarea>
+
+                        <button onclick="saveBillTemplate()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs uppercase shadow-sm">Lưu mẫu tin nhắn</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- THANH ĐIỀU HƯỚNG DƯỚI (BOTTOM NAVIGATION) -->
+        <nav class="fixed bottom-0 max-w-lg w-full bg-white/95 backdrop-blur-lg border-t border-slate-200/80 px-2 py-2 safe-area-bottom z-40 flex justify-around items-center shadow-lg">
+            <button onclick="navigateTab('dashboard')" id="nav-dashboard" class="nav-btn flex-1 flex flex-col items-center py-1 gap-0.5 text-indigo-600 transition-all">
+                <i class="fa-solid fa-chart-pie text-base"></i>
+                <span class="text-[9px] font-bold">Tổng quan</span>
+            </button>
+            <button onclick="navigateTab('rooms')" id="nav-rooms" class="nav-btn flex-1 flex flex-col items-center py-1 gap-0.5 text-slate-400 hover:text-slate-600 transition-all">
+                <i class="fa-solid fa-border-all text-base"></i>
+                <span class="text-[9px] font-bold">Sơ đồ</span>
+            </button>
+            <button onclick="navigateTab('finance')" id="nav-finance" class="nav-btn flex-1 flex flex-col items-center py-1 gap-0.5 text-slate-400 hover:text-slate-600 transition-all">
+                <i class="fa-solid fa-calculator text-base"></i>
+                <span class="text-[9px] font-bold">Chốt sổ</span>
+            </button>
+            <button onclick="navigateTab('tenants')" id="nav-tenants" class="nav-btn flex-1 flex flex-col items-center py-1 gap-0.5 text-slate-400 hover:text-slate-600 transition-all">
+                <i class="fa-solid fa-receipt text-base"></i>
+                <span class="text-[9px] font-bold">Hóa đơn</span>
+            </button>
+            <button onclick="navigateTab('settings')" id="nav-settings" class="nav-btn flex-1 flex flex-col items-center py-1 gap-0.5 text-slate-400 hover:text-slate-600 transition-all">
+                <i class="fa-solid fa-sliders text-base"></i>
+                <span class="text-[9px] font-bold">Cài đặt</span>
+            </button>
+        </nav>
+
+        <!-- MAIN MODAL -->
+        <div id="mainModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl transition-all transform overflow-y-auto max-h-[85vh]">
+                <div id="modalContent"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Script điều hướng Tab Bar & Đăng ký PWA Service Worker -->
+    <script>
+        function navigateTab(tabName) {
+            if (typeof window.switchTab === 'function') {
+                window.switchTab(tabName);
+            }
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-indigo-600');
+                btn.classList.add('text-slate-400');
+            });
+            const activeBtn = document.getElementById(`nav-${tabName}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-400');
+                activeBtn.classList.add('text-indigo-600');
+            }
+        }
+
+        // Đăng ký Service Worker PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((reg) => console.log('HOMESTECH PWA registered:', reg.scope))
+                    .catch((err) => console.log('Service Worker failed:', err));
+            });
+        }
+    </script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
+
+3. File app.js (Đầy đủ 100%)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, onValue, set, push, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -20,9 +429,9 @@ let allBills = [];
 let allTransactions = [];
 let config = { electric: 3500, water: 15000, internet: 50000, garbage: 30000, parking: 100000 };
 let teleConfig = { botToken: "", chatId: "" };
-let defaultBillTemplate = "Chào {ten}, trọ gửi bạn hóa đơn tiền phòng {phong} tháng {thang} với tổng số tiền là: {tien}đ. Vui lòng thanh toán trước ngày 05 hàng tháng. Cảm ơn bạn!";
+let defaultBillTemplate = "【HOMESTECH】Chào {ten}, hệ thống gửi bạn hóa đơn tiền phòng {phong} tháng {thang} với tổng số tiền cần thanh toán là: {tien}đ. Vui lòng thanh toán trước ngày 05 hàng tháng. Cảm ơn bạn!";
 
-// --- 1. LẮNG NGHE FIREBASE REAL-TIME ---
+// --- 1. LẮNG NGHE DỮ LIỆU FIREBASE REAL-TIME ---
 onValue(ref(db, 'settings'), (snapshot) => {
     if (snapshot.exists()) {
         config = snapshot.val();
@@ -109,7 +518,7 @@ window.switchSettingSubTab = (sub) => {
     if (sub === 'ledger') renderTransactionsList();
 };
 
-// --- 3. DASHBOARD (TỔNG QUAN) ---
+// --- 3. DASHBOARD METRICS ---
 function updateDashboardMetrics() {
     const total = rooms.length;
     const occupied = rooms.filter(r => r.status === 'occupied').length;
@@ -921,7 +1330,81 @@ window.exportMonthBillsCSV = () => {
     document.body.removeChild(link);
 };
 
-// --- 7. QUẢN LÝ THÔNG TIN LƯU TRÚ & MODALS ---
+// --- 7. QUẢN LÝ THÔNG TIN LƯU TRÚ, CCCD & HỢP ĐỒNG ---
+function compressAndConvertImage(file, maxWidth = 1000, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+    });
+}
+
+window.handleCCCDUpload = async (input, previewId, hiddenInputId) => {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        alert("Vui lòng chỉ chọn tệp hình ảnh!");
+        return;
+    }
+
+    try {
+        const base64Img = await compressAndConvertImage(file);
+        const hiddenEl = document.getElementById(hiddenInputId);
+        const previewEl = document.getElementById(previewId);
+
+        if (hiddenEl) hiddenEl.value = base64Img;
+        if (previewEl) {
+            previewEl.src = base64Img;
+            previewEl.classList.remove('hidden');
+        }
+    } catch (e) {
+        alert("Lỗi khi xử lý hình ảnh: " + e.message);
+    }
+};
+
+window.viewFullImage = (src, title = "Xem ảnh CCCD") => {
+    const modal = document.getElementById('mainModal');
+    const content = document.getElementById('modalContent');
+    modal.classList.remove('hidden');
+
+    content.innerHTML = `
+        <div class="space-y-3">
+            <div class="flex justify-between items-center pb-2 border-b">
+                <h4 class="text-xs font-bold uppercase text-slate-700">${title}</h4>
+                <button onclick="closeModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:bg-slate-200 flex items-center justify-center">
+                    <i class="fa-solid fa-times text-xs"></i>
+                </button>
+            </div>
+            <div class="max-h-[75vh] overflow-auto flex justify-center bg-slate-900 rounded-2xl p-2">
+                <img src="${src}" class="max-w-full h-auto object-contain rounded-xl shadow-lg">
+            </div>
+            <button onclick="closeModal()" class="w-full py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase">Đóng</button>
+        </div>
+    `;
+};
+
 function calculateStayDuration(startDate) {
     if (!startDate) return "N/A";
     const start = new Date(startDate);
@@ -964,6 +1447,30 @@ function renderRoomDetail(id, container) {
                             <div class="grid grid-cols-2 gap-2">
                                 <input type="text" class="m-license p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold outline-none" placeholder="Biển số xe">
                                 <input type="text" class="m-hometown p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold outline-none" placeholder="Quê quán">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-indigo-100 space-y-1.5">
+                        <span class="text-[9px] font-extrabold uppercase text-slate-500 ml-1">Đính kèm ảnh CCCD Trưởng phòng</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-white p-2 rounded-xl border border-dashed border-slate-300 text-center relative hover:bg-slate-50">
+                                <input type="file" accept="image/*" class="hidden" id="file-cccd-front" onchange="handleCCCDUpload(this, 'preview-cccd-front', 'ci-cccd-front')">
+                                <input type="hidden" id="ci-cccd-front" value="">
+                                <label for="file-cccd-front" class="cursor-pointer block">
+                                    <i class="fa-solid fa-camera text-slate-400 text-xs mb-1 block"></i>
+                                    <span class="text-[9px] font-bold text-slate-500">Mặt trước CCCD</span>
+                                </label>
+                                <img id="preview-cccd-front" src="" class="hidden w-full h-14 object-cover rounded-lg mt-1 cursor-pointer border border-slate-200" onclick="viewFullImage(this.src, 'Mặt trước CCCD')">
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-dashed border-slate-300 text-center relative hover:bg-slate-50">
+                                <input type="file" accept="image/*" class="hidden" id="file-cccd-back" onchange="handleCCCDUpload(this, 'preview-cccd-back', 'ci-cccd-back')">
+                                <input type="hidden" id="ci-cccd-back" value="">
+                                <label for="file-cccd-back" class="cursor-pointer block">
+                                    <i class="fa-solid fa-camera text-slate-400 text-xs mb-1 block"></i>
+                                    <span class="text-[9px] font-bold text-slate-500">Mặt sau CCCD</span>
+                                </label>
+                                <img id="preview-cccd-back" src="" class="hidden w-full h-14 object-cover rounded-lg mt-1 cursor-pointer border border-slate-200" onclick="viewFullImage(this.src, 'Mặt sau CCCD')">
                             </div>
                         </div>
                     </div>
@@ -1054,6 +1561,30 @@ function renderRoomDetail(id, container) {
                         </div>
                     </div>
 
+                    <div class="pt-2 border-t border-indigo-100 space-y-1.5">
+                        <span class="text-[9px] font-extrabold uppercase text-slate-500 ml-1">Đính kèm ảnh CCCD</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-white p-2 rounded-xl border border-dashed border-slate-300 text-center relative hover:bg-slate-50">
+                                <input type="file" accept="image/*" class="hidden" id="file-cccd-front" onchange="handleCCCDUpload(this, 'preview-cccd-front', 'ci-cccd-front')">
+                                <input type="hidden" id="ci-cccd-front" value="">
+                                <label for="file-cccd-front" class="cursor-pointer block">
+                                    <i class="fa-solid fa-camera text-slate-400 text-xs mb-1 block"></i>
+                                    <span class="text-[9px] font-bold text-slate-500">Mặt trước CCCD</span>
+                                </label>
+                                <img id="preview-cccd-front" src="" class="hidden w-full h-14 object-cover rounded-lg mt-1 cursor-pointer border border-slate-200" onclick="viewFullImage(this.src, 'Mặt trước CCCD')">
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-dashed border-slate-300 text-center relative hover:bg-slate-50">
+                                <input type="file" accept="image/*" class="hidden" id="file-cccd-back" onchange="handleCCCDUpload(this, 'preview-cccd-back', 'ci-cccd-back')">
+                                <input type="hidden" id="ci-cccd-back" value="">
+                                <label for="file-cccd-back" class="cursor-pointer block">
+                                    <i class="fa-solid fa-camera text-slate-400 text-xs mb-1 block"></i>
+                                    <span class="text-[9px] font-bold text-slate-500">Mặt sau CCCD</span>
+                                </label>
+                                <img id="preview-cccd-back" src="" class="hidden w-full h-14 object-cover rounded-lg mt-1 cursor-pointer border border-slate-200" onclick="viewFullImage(this.src, 'Mặt sau CCCD')">
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="pt-2 border-t border-indigo-100 space-y-2 text-xs">
                         <input type="hidden" id="ci-deposit" value="${bk.amount || 0}">
                         <div class="space-y-1">
@@ -1086,6 +1617,9 @@ function renderRoomDetail(id, container) {
             ? r.members 
             : [{ name: r.tenantName, phone: r.tenantPhone, cccd: r.tenantCCCD, license: r.tenantLicense, hometown: r.tenantHometown }];
 
+        const cccdFront = r.cccdFront || "";
+        const cccdBack = r.cccdBack || "";
+
         actionHTML = `
             <div class="space-y-3">
                 <div class="flex justify-between items-center px-1">
@@ -1097,7 +1631,7 @@ function renderRoomDetail(id, container) {
                     </button>
                 </div>
 
-                <div class="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+                <div class="space-y-2 max-h-[200px] overflow-y-auto pr-1">
                     ${memberList.map((m, idx) => `
                         <div class="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm space-y-1.5 text-xs">
                             <div class="flex justify-between items-start">
@@ -1129,6 +1663,28 @@ function renderRoomDetail(id, container) {
                     `).join('')}
                 </div>
 
+                <div class="bg-white p-3 rounded-2xl border border-slate-200/80 space-y-1.5">
+                    <span class="text-[10px] font-extrabold uppercase text-slate-500 block">Hình ảnh CCCD lưu trữ</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            ${cccdFront ? `
+                                <img src="${cccdFront}" class="w-full h-16 object-cover rounded-xl border cursor-pointer shadow-sm hover:opacity-90" onclick="viewFullImage('${cccdFront}', 'Mặt trước CCCD')">
+                                <span class="text-[8px] text-slate-400 font-semibold block text-center mt-0.5">Mặt trước (Click xem)</span>
+                            ` : `
+                                <div class="w-full h-16 bg-slate-50 rounded-xl border border-dashed flex items-center justify-center text-[10px] text-slate-400">Chưa có ảnh trước</div>
+                            `}
+                        </div>
+                        <div>
+                            ${cccdBack ? `
+                                <img src="${cccdBack}" class="w-full h-16 object-cover rounded-xl border cursor-pointer shadow-sm hover:opacity-90" onclick="viewFullImage('${cccdBack}', 'Mặt sau CCCD')">
+                                <span class="text-[8px] text-slate-400 font-semibold block text-center mt-0.5">Mặt sau (Click xem)</span>
+                            ` : `
+                                <div class="w-full h-16 bg-slate-50 rounded-xl border border-dashed flex items-center justify-center text-[10px] text-slate-400">Chưa có ảnh sau</div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+
                 <div class="bg-indigo-50/60 p-3 rounded-2xl border border-indigo-100 flex justify-between items-center text-xs">
                     <div>
                         <span class="text-[9px] font-bold text-slate-400 uppercase block">Tiền cọc</span>
@@ -1143,6 +1699,10 @@ function renderRoomDetail(id, container) {
                         <span class="font-bold text-slate-700">${r.checkInDate || '---'}</span>
                     </div>
                 </div>
+
+                <button onclick="generateRentalContractModal('${id}')" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-black uppercase shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-file-contract"></i> Xuất Hợp Đồng Thuê Trọ Tự Động
+                </button>
 
                 <div class="grid grid-cols-2 gap-2 pt-1">
                     <button onclick="sendTenantReminderSMS('${id}')" class="py-2.5 bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold uppercase transition-all">
@@ -1221,15 +1781,21 @@ window.saveMultipleMembersCheckIn = async (roomId) => {
     const startE = Number(document.getElementById('ci-electric')?.value) || 0;
     const startW = Number(document.getElementById('ci-water')?.value) || 0;
 
+    const cccdFront = document.getElementById('ci-cccd-front')?.value || "";
+    const cccdBack = document.getElementById('ci-cccd-back')?.value || "";
+
     await update(ref(db, `rooms/${roomId}`), {
         status: 'occupied',
         tenantName: members[0].name,
         tenantPhone: members[0].phone,
+        tenantCCCD: members[0].cccd || '',
         members: members,
         depositAmount: depositAmount,
         checkInDate: checkInDate,
         lastElectric: startE,
         lastWater: startW,
+        cccdFront: cccdFront,
+        cccdBack: cccdBack,
         booking: null,
         nextPaymentDate: checkInDate
     });
@@ -1312,15 +1878,124 @@ window.updateStatus = async (id, status) => {
     if (status === 'empty') {
         updates.tenantName = null;
         updates.tenantPhone = null;
+        updates.tenantCCCD = null;
         updates.members = null;
         updates.depositAmount = 0;
         updates.checkInDate = null;
         updates.booking = null;
         updates.debtAmount = 0;
         updates.nextPaymentDate = null;
+        updates.cccdFront = null;
+        updates.cccdBack = null;
     }
     await update(ref(db, `rooms/${id}`), updates);
     closeModal();
+};
+
+// --- HÀM TẠO VÀ IN HỢP ĐỒNG THUÊ TRỌ ---
+window.generateRentalContractModal = (roomId) => {
+    const r = rooms.find(room => room.id === roomId);
+    if (!r) return;
+
+    const modal = document.getElementById('mainModal');
+    const content = document.getElementById('modalContent');
+    modal.classList.remove('hidden');
+
+    const memberList = Array.isArray(r.members) && r.members.length > 0 
+        ? r.members 
+        : [{ name: r.tenantName, phone: r.tenantPhone, cccd: r.tenantCCCD, hometown: r.tenantHometown }];
+
+    const primaryTenant = memberList[0] || {};
+    const others = memberList.slice(1);
+    const startDate = new Date(r.checkInDate || Date.now());
+    const day = startDate.getDate();
+    const month = startDate.getMonth() + 1;
+    const year = startDate.getFullYear();
+
+    const rateE = Number(config.electric || config.gia_dien || 3500);
+    const rateW = Number(config.water || config.gia_nuoc || 15000);
+
+    content.innerHTML = `
+        <div class="space-y-4">
+            <div class="flex justify-between items-center pb-2 border-b no-print">
+                <h3 class="text-sm font-black uppercase text-indigo-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-contract"></i> Hợp Đồng Thuê Phòng Trọ
+                </h3>
+                <div class="flex gap-2">
+                    <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl font-bold text-xs uppercase shadow flex items-center gap-1">
+                        <i class="fa-solid fa-print"></i> In / Xuất PDF
+                    </button>
+                    <button onclick="closeModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:bg-slate-200 flex items-center justify-center">
+                        <i class="fa-solid fa-times text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="printableContract" class="p-6 bg-white border border-slate-200 rounded-2xl text-slate-800 text-[13px] leading-relaxed space-y-4 max-h-[75vh] overflow-y-auto font-sans">
+                <div class="text-center space-y-1">
+                    <p class="font-bold text-xs uppercase tracking-wider">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+                    <p class="font-bold text-xs underline">Độc lập - Tự do - Hạnh phúc</p>
+                    <h2 class="text-base font-black uppercase pt-3 text-slate-900">HỢP ĐỒNG THUÊ PHÒNG TRỌ</h2>
+                    <p class="text-[11px] italic text-slate-500">Hôm nay, ngày ${day} tháng ${month} năm ${year}, tại địa chỉ nhà trọ.</p>
+                </div>
+
+                <div class="space-y-2">
+                    <p class="font-bold text-slate-900 uppercase text-xs border-b pb-1">BÊN CHO THUÊ (BÊN A):</p>
+                    <div class="grid grid-cols-2 gap-1 text-[12px]">
+                        <p><b>Đại diện quản lý:</b> HOMESTECH</p>
+                        <p><b>Số điện thoại:</b> .....................................</p>
+                        <p class="col-span-2"><b>Địa chỉ nhà trọ:</b> Khu vực ${r.zone || 'Tòa nhà'}</p>
+                    </div>
+                </div>
+
+                <div class="space-y-2 text-[12px]">
+                    <p class="font-bold text-slate-900 uppercase text-xs border-b pb-1">BÊN THUÊ PHÒNG (BÊN B):</p>
+                    <div class="grid grid-cols-2 gap-1 text-[12px]">
+                        <p><b>Họ và tên:</b> <span class="uppercase font-bold text-slate-900">${primaryTenant.name || '.....................................'}</span></p>
+                        <p><b>Số điện thoại:</b> ${primaryTenant.phone || '.....................................'}</p>
+                        <p><b>Số CCCD/CMND:</b> ${primaryTenant.cccd || '.....................................'}</p>
+                        <p><b>Biển số xe:</b> ${primaryTenant.license || 'Không có'}</p>
+                        <p class="col-span-2"><b>Quê quán / Thường trú:</b> ${primaryTenant.hometown || '.....................................................................'}</p>
+                    </div>
+
+                    ${others.length > 0 ? `
+                        <div class="mt-2 pt-2 border-t border-dashed">
+                            <p class="font-bold text-[12px] text-slate-700">Các thành viên ở cùng phòng (${others.length} người):</p>
+                            <ul class="list-disc pl-5 text-[11px] space-y-0.5 mt-1">
+                                ${others.map(o => `<li><b>${o.name}</b> - SĐT: ${o.phone || '---'} - CCCD: ${o.cccd || '---'} (Xe: ${o.license || '---'})</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="space-y-2 text-[12px]">
+                    <p class="font-bold text-slate-900 uppercase text-xs border-b pb-1">ĐIỀU KHOẢN HỢP ĐỒNG:</p>
+                    <p><b>1. Phòng thuê:</b> Phòng số <b>${r.roomNumber}</b> thuộc ${r.zone || 'Khu nhà trọ'}.</p>
+                    <p><b>2. Giá thuê phòng:</b> <b>${Number(r.basePrice || 0).toLocaleString()} VNĐ/tháng</b> <i>(Bằng chữ: ..............................................................)</i>.</p>
+                    <p><b>3. Tiền đặt cọc:</b> <b>${Number(r.depositAmount || 0).toLocaleString()} VNĐ</b>. Số tiền này dùng để đảm bảo thực hiện hợp đồng và hoàn trả khi hết hạn hợp đồng sau khi khấu trừ chi phí hư hỏng/tiền điện nước (nếu có).</p>
+                    <p><b>4. Chi phí dịch vụ:</b></p>
+                    <ul class="list-disc pl-5 space-y-0.5">
+                        <li>Tiền điện: <b>${rateE.toLocaleString()} VNĐ/kWh</b> (Chỉ số bàn giao bắt đầu: <b>${r.lastElectric || 0}</b> kWh).</li>
+                        <li>Tiền nước: <b>${rateW.toLocaleString()} VNĐ/m³</b> (Chỉ số bàn giao bắt đầu: <b>${r.lastWater || 0}</b> m³).</li>
+                        <li>Các dịch vụ khác theo biểu giá niêm yết hiện hành của nhà trọ.</li>
+                    </ul>
+                    <p><b>5. Kỳ hạn thanh toán:</b> Tiền phòng và chi phí điện nước được tính toán và thanh toán định kỳ từ ngày 01 đến ngày 05 hàng tháng.</p>
+                    <p><b>6. Trách nhiệm chung:</b> Bên B chấp hành đúng nội quy phòng trọ, đăng ký tạm trú theo quy định, giữ gìn vệ sinh chung, không chứa chất cháy nổ hoặc hàng cấm. Báo trước tối thiểu 30 ngày nếu có nhu cầu trả phòng.</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 pt-6 text-center text-[12px]">
+                    <div class="space-y-12">
+                        <p class="font-bold uppercase">ĐẠI DIỆN BÊN B (BÊN THUÊ)</p>
+                        <p class="font-bold uppercase">${primaryTenant.name || ''}</p>
+                    </div>
+                    <div class="space-y-12">
+                        <p class="font-bold uppercase">ĐẠI DIỆN BÊN A (BÊN CHO THUÊ)</p>
+                        <p class="font-bold uppercase">HOMESTECH</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
 };
 
 // --- 8. QUẢN LÝ PHÒNG & MODALS TRONG TAB CÀI ĐẶT ---
@@ -1865,7 +2540,7 @@ window.testTelegramMessage = async () => {
 
     if (!botToken || !chatId) return alert("Vui lòng điền đủ Bot Token và Chat ID!");
 
-    const text = "🔔 [PMS MANAGER 2026] Thông báo thử nghiệm kết nối Telegram Bot thành công!";
+    const text = "🔔 [HOMESTECH 2026] Thông báo thử nghiệm kết nối Telegram Bot thành công!";
     try {
         const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
             method: "POST",
@@ -1885,7 +2560,7 @@ window.sendTelegramBroadcast = async () => {
         return alert("Vui lòng cấu hình Bot Token và Chat ID tại Tab Cài Đặt trước!");
     }
     const dueCount = rooms.filter(r => r.status === 'occupied').length;
-    const text = `📢 BÁO CÁO PHÒNG TRỌ:\n- Tổng phòng đang ở: ${dueCount}\n- Kiểm tra và thu tiền phòng đúng hạn.`;
+    const text = `📢 BÁO CÁO HOMESTECH:\n- Tổng phòng đang ở: ${dueCount}\n- Kiểm tra và thu tiền phòng đúng hạn.`;
     
     await fetch(`https://api.telegram.org/bot${teleConfig.botToken}/sendMessage`, {
         method: "POST",
@@ -1921,3 +2596,4 @@ window.closeModal = () => document.getElementById('mainModal').classList.add('hi
 
 // --- KHỞI CHẠY TẢI DỮ LIỆU BAN ĐẦU ---
 fetchAllBills();
+
