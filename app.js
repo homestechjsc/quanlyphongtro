@@ -1,412 +1,3 @@
-Dưới đây là bộ mã nguồn hoàn chỉnh và đầy đủ nhất cho cả 3 file: index.html, app.js và manifest.json.
-Tất cả đã được đồng bộ hóa 100% theo nhận diện thương hiệu HOMESTECH, khắc phục hoàn toàn lỗi nợ cũ, bổ sung Đính kèm ảnh CCCD 2 mặt (tự động nén lưu Firebase), Tạo Hợp đồng thuê phòng tự động (In / Xuất PDF), Sổ Quỹ Thu - Chi, cùng đầy đủ các tính năng PWA.
-1. File manifest.json
-Tạo file manifest.json trong cùng thư mục với index.html:
-{
-  "name": "HOMESTECH - Quản Lý Phòng Trọ",
-  "short_name": "HOMESTECH",
-  "description": "Hệ thống quản lý phòng trọ, tính tiền và lưu trú thông minh HOMESTECH",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#4f46e5",
-  "orientation": "portrait-primary",
-  "icons": [
-    {
-      "src": "./logo.svg",
-      "sizes": "192x192 512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ]
-}
-
-2. File index.html (Đầy đủ 100%)
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HOMESTECH - Quản Lý Phòng Trọ Cao Cấp</title>
-
-    <!-- PWA & ICON CONFIG -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4f46e5">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="HOMESTECH">
-    <link rel="icon" type="image/svg+xml" href="./logo.svg">
-    <link rel="apple-touch-icon" href="./logo.svg">
-
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome 6 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
-    <style>
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .safe-area-bottom { padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem); }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-
-        /* Style tối ưu khi in hoặc xuất PDF Hợp đồng thuê */
-        @media print {
-            body * { visibility: hidden; }
-            #printableContract, #printableContract * { visibility: visible; }
-            #printableContract {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                margin: 0;
-                padding: 20px;
-                background: white !important;
-                color: black !important;
-            }
-            .no-print { display: none !important; }
-        }
-    </style>
-</head>
-<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex justify-center selection:bg-indigo-500 selection:text-white">
-
-    <div class="w-full max-w-lg min-h-screen bg-slate-50 flex flex-col shadow-2xl relative">
-        
-        <!-- HEADER HOMESTECH -->
-        <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 sticky top-0 z-30 flex justify-between items-center">
-            <div class="flex items-center gap-2.5">
-                <img src="./logo.svg" alt="HOMESTECH" class="w-9 h-9 rounded-xl shadow-md shadow-indigo-100 object-cover">
-                <div>
-                    <h1 class="font-black text-slate-800 text-sm leading-tight tracking-tight">HOMESTECH</h1>
-                    <p class="text-[9px] font-bold text-indigo-600 uppercase tracking-wider">PMS Manager 2026</p>
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-1.5">
-                <!-- Nút Tạo Phiếu Thu/Chi Nhanh -->
-                <button onclick="openTransactionModal()" title="Tạo phiếu thu chi" class="bg-amber-50 text-amber-600 hover:bg-amber-100 w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold active:scale-95 transition-all">
-                    <i class="fa-solid fa-money-bill-transfer text-sm"></i>
-                </button>
-                <button onclick="sendTelegramBroadcast()" title="Gửi thông báo Telegram" class="bg-sky-50 text-sky-600 hover:bg-sky-100 w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold transition-all">
-                    <i class="fa-brands fa-telegram text-sm"></i>
-                </button>
-                <button onclick="openModal('add-room')" class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-xl shadow-md shadow-indigo-100 transition-all">
-                    <i class="fa-solid fa-plus text-xs"></i>
-                    <span>Phòng</span>
-                </button>
-            </div>
-        </header>
-
-        <!-- NỘI DUNG CHÍNH (MAIN TABS) -->
-        <main class="flex-1 p-4 pb-28">
-
-            <!-- TAB 1: DASHBOARD (TỔNG QUAN) -->
-            <div id="view-dashboard" class="space-y-4">
-                <div class="bg-gradient-to-br from-indigo-700 via-indigo-600 to-blue-600 rounded-3xl p-5 text-white shadow-xl shadow-indigo-100 space-y-4">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-200">Lợi nhuận ròng (Thu - Chi)</span>
-                            <h2 id="dash-net-profit" class="text-2xl font-black mt-0.5 tracking-tight">0đ</h2>
-                        </div>
-                        <span class="bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-wide">
-                            <i class="fa-solid fa-arrow-trend-up mr-1 text-emerald-300"></i>Online
-                        </span>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-2 pt-3 border-t border-white/15 text-xs">
-                        <div>
-                            <p class="text-[9px] text-indigo-200 font-medium uppercase">Tổng tiền thu</p>
-                            <p id="dash-real-revenue" class="font-extrabold text-emerald-300 text-xs mt-0.5">0đ</p>
-                        </div>
-                        <div>
-                            <p class="text-[9px] text-indigo-200 font-medium uppercase">Tổng tiền chi</p>
-                            <p id="dash-total-expense" class="font-extrabold text-rose-300 text-xs mt-0.5">0đ</p>
-                        </div>
-                        <div>
-                            <p class="text-[9px] text-indigo-200 font-medium uppercase">Công nợ</p>
-                            <p id="dash-unpaid-revenue" class="font-extrabold text-amber-300 text-xs mt-0.5">0đ</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Thẻ thống kê chi tiết -->
-                <div class="grid grid-cols-4 gap-2">
-                    <div class="bg-white p-2.5 rounded-2xl border border-slate-200/70 shadow-sm text-center">
-                        <span class="text-[9px] font-bold text-slate-400 uppercase block">Tổng phòng</span>
-                        <span id="stat-total" class="text-sm font-black text-slate-700">0</span>
-                    </div>
-                    <div class="bg-white p-2.5 rounded-2xl border border-indigo-100 shadow-sm text-center bg-indigo-50/20">
-                        <span class="text-[9px] font-bold text-indigo-600 uppercase block">Đang ở</span>
-                        <span id="stat-occupied" class="text-sm font-black text-indigo-600">0</span>
-                    </div>
-                    <div class="bg-white p-2.5 rounded-2xl border border-emerald-100 shadow-sm text-center bg-emerald-50/20">
-                        <span class="text-[9px] font-bold text-emerald-600 uppercase block">Trống</span>
-                        <span id="stat-empty" class="text-sm font-black text-emerald-600">0</span>
-                    </div>
-                    <div class="bg-white p-2.5 rounded-2xl border border-amber-100 shadow-sm text-center bg-amber-50/20">
-                        <span class="text-[9px] font-bold text-amber-600 uppercase block">Đã cọc</span>
-                        <span id="stat-deposit" class="text-sm font-black text-amber-600">0</span>
-                    </div>
-                </div>
-
-                <!-- Danh sách nhắc việc / Cảnh báo sắp đến hạn thu tiền -->
-                <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
-                    <div class="flex justify-between items-center">
-                        <h3 class="font-extrabold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                            <i class="fa-solid fa-bell text-amber-500"></i>
-                            <span>Cảnh báo thu tiền phòng</span>
-                        </h3>
-                        <span id="due-count-badge" class="bg-rose-100 text-rose-600 px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase">0 phòng</span>
-                    </div>
-                    <div id="dueRoomsList" class="space-y-2">
-                        <p class="text-[11px] text-slate-400 text-center py-2 font-medium">Không có phòng nào sắp đến hạn đóng tiền</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 2: SƠ ĐỒ PHÒNG -->
-            <div id="view-rooms" class="hidden space-y-4">
-                <div class="flex items-center justify-between px-1">
-                    <div>
-                        <h2 class="font-extrabold text-slate-800 text-sm">Sơ đồ tình trạng phòng</h2>
-                        <p class="text-[10px] text-slate-400 font-semibold uppercase">Theo dõi trực quan thời gian thực</p>
-                    </div>
-                    <div class="flex items-center gap-2 text-[9px] font-bold text-slate-500">
-                        <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md"><span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>Ở</span>
-                        <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Trống</span>
-                        <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Cọc</span>
-                    </div>
-                </div>
-
-                <div id="roomGrid" class="grid grid-cols-2 gap-3"></div>
-            </div>
-
-            <!-- TAB 3: TÍNH TIỀN / CHỐT SỔ -->
-            <div id="view-finance" class="hidden space-y-4"></div>
-
-            <!-- TAB 4: LỊCH SỬ HÓA ĐƠN -->
-            <div id="view-tenants" class="hidden space-y-4">
-                <div class="flex justify-between items-center px-1">
-                    <div>
-                        <h2 class="font-extrabold text-slate-800 text-sm">Quản lý hóa đơn</h2>
-                        <p class="text-[10px] text-slate-400 font-semibold uppercase">Tra cứu, in phiếu thu & công nợ</p>
-                    </div>
-                    <button onclick="exportMonthBillsCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase shadow-sm flex items-center gap-1 active:scale-95 transition-all">
-                        <i class="fa-solid fa-file-excel"></i> Xuất Excel
-                    </button>
-                </div>
-
-                <!-- Bộ lọc hóa đơn -->
-                <div class="bg-white p-3.5 rounded-3xl shadow-sm border border-slate-200/80 space-y-3">
-                    <div class="relative">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                        <input type="text" id="searchBill" oninput="filterBills()" placeholder="Tìm số phòng, tên khách thuê..." 
-                            class="w-full pl-9 pr-3 py-2.5 bg-slate-50 rounded-2xl border border-slate-200/80 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all">
-                    </div>
-                    
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="setQuickFilter('thisMonth')" id="btn-flt-thisMonth" class="py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-bold uppercase transition-all">Tháng này</button>
-                        <button onclick="setQuickFilter('unpaid')" id="btn-flt-unpaid" class="py-2 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold uppercase transition-all">Còn nợ</button>
-                        <button onclick="setQuickFilter('all')" id="btn-flt-all" class="py-2 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold uppercase transition-all">Tất cả</button>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
-                        <select id="billFilterMonth" onchange="filterBills()" class="p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 outline-none">
-                            <option value="">-- Tất cả các tháng --</option>
-                            <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
-                            <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
-                            <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
-                            <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
-                        </select>
-                        <select id="billFilterStatus" onchange="filterBills()" class="p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 outline-none">
-                            <option value="">-- Tất cả trạng thái --</option>
-                            <option value="unpaid">Chưa thu (Còn nợ)</option>
-                            <option value="paid">Đã thanh toán</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Danh sách Hóa đơn -->
-                <div id="tenantList" class="space-y-3"></div>
-            </div>
-
-            <!-- TAB 5: TRUNG TÂM CÀI ĐẶT -->
-            <div id="view-settings" class="hidden space-y-4">
-                <div class="px-1">
-                    <h2 class="font-extrabold text-slate-800 text-base">Trung tâm cấu hình</h2>
-                    <p class="text-[10px] text-slate-400 font-semibold uppercase">Thiết lập đơn giá, phòng trọ, sổ quỹ thu chi & thông báo</p>
-                </div>
-
-                <!-- Sub-nav chuyển đổi các mục cài đặt -->
-                <div class="flex bg-slate-200/70 p-1 rounded-2xl gap-1 text-[11px] font-bold">
-                    <button onclick="switchSettingSubTab('services')" id="subtab-services" class="flex-1 py-2 rounded-xl bg-white text-indigo-600 shadow-sm transition-all text-center">Dịch vụ</button>
-                    <button onclick="switchSettingSubTab('rooms_mgr')" id="subtab-rooms_mgr" class="flex-1 py-2 rounded-xl text-slate-500 transition-all text-center">Phòng</button>
-                    <button onclick="switchSettingSubTab('ledger')" id="subtab-ledger" class="flex-1 py-2 rounded-xl text-slate-500 transition-all text-center">Sổ Thu/Chi</button>
-                    <button onclick="switchSettingSubTab('telegram')" id="subtab-telegram" class="flex-1 py-2 rounded-xl text-slate-500 transition-all text-center">Telegram</button>
-                    <button onclick="switchSettingSubTab('template')" id="subtab-template" class="flex-1 py-2 rounded-xl text-slate-500 transition-all text-center">Mẫu gửi</button>
-                </div>
-
-                <!-- Section 1: Quản lý chi phí & Dịch vụ -->
-                <div id="setting-sec-services" class="space-y-3">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-slate-600 uppercase">Đơn giá áp dụng</span>
-                        <button onclick="openConfigModal()" class="bg-indigo-600 text-white px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase shadow-sm">
-                            <i class="fa fa-plus mr-1"></i>Thêm dịch vụ
-                        </button>
-                    </div>
-                    <div id="configContainer" class="grid grid-cols-2 gap-2.5"></div>
-                    <button onclick="saveSettings()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold uppercase text-xs shadow-md active:scale-98 transition-all">
-                        <i class="fa-solid fa-floppy-disk mr-1.5"></i>Lưu thay đổi đơn giá
-                    </button>
-                </div>
-
-                <!-- Section 2: Quản lý phòng -->
-                <div id="setting-sec-rooms_mgr" class="hidden space-y-3">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-slate-600 uppercase">Danh sách phòng hiện có</span>
-                        <button onclick="openModal('add-room')" class="bg-indigo-600 text-white px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase shadow-sm">
-                            <i class="fa fa-plus mr-1"></i>Thêm mới
-                        </button>
-                    </div>
-                    <div id="roomsManageContainer" class="space-y-2"></div>
-                </div>
-
-                <!-- Section 3: Sổ Quỹ Thu Chi -->
-                <div id="setting-sec-ledger" class="hidden space-y-3">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-slate-600 uppercase">Lịch sử phiếu Thu / Chi</span>
-                        <button onclick="openTransactionModal()" class="bg-indigo-600 text-white px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase shadow-sm">
-                            <i class="fa fa-plus mr-1"></i>Tạo phiếu
-                        </button>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="bg-emerald-50 border border-emerald-100 p-3 rounded-2xl">
-                            <span class="text-[9px] font-bold text-emerald-600 uppercase block">Tổng Thu Ngoài</span>
-                            <span id="ledger-total-income" class="text-xs font-black text-emerald-700">0đ</span>
-                        </div>
-                        <div class="bg-rose-50 border border-rose-100 p-3 rounded-2xl">
-                            <span class="text-[9px] font-bold text-rose-600 uppercase block">Tổng Chi Phí</span>
-                            <span id="ledger-total-expense" class="text-xs font-black text-rose-700">0đ</span>
-                        </div>
-                    </div>
-
-                    <div id="transactionsList" class="space-y-2"></div>
-                </div>
-
-                <!-- Section 4: Cấu hình Telegram Notification -->
-                <div id="setting-sec-telegram" class="hidden space-y-3">
-                    <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
-                        <div class="flex items-center gap-2">
-                            <i class="fa-brands fa-telegram text-sky-500 text-xl"></i>
-                            <div>
-                                <h4 class="font-extrabold text-xs text-slate-800">Thông báo qua Telegram Bot</h4>
-                                <p class="text-[9px] text-slate-400 font-medium">Nhận cảnh báo hạn đóng tiền phòng tự động</p>
-                            </div>
-                        </div>
-
-                        <div class="space-y-2 pt-2">
-                            <div class="space-y-1">
-                                <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">Telegram Bot Token</label>
-                                <input type="text" id="cfg-tele-token" placeholder="Ví dụ: 612345678:AAFn..." class="w-full p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs font-semibold outline-none">
-                            </div>
-                            <div class="space-y-1">
-                                <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">Telegram Chat ID</label>
-                                <input type="text" id="cfg-tele-chatid" placeholder="Ví dụ: -1001234567 hoặc 98765432" class="w-full p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs font-semibold outline-none">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2 pt-2">
-                            <button onclick="testTelegramMessage()" class="py-2.5 bg-sky-50 text-sky-600 hover:bg-sky-100 rounded-xl text-xs font-bold transition-all">Gửi thử nghiệm</button>
-                            <button onclick="saveTelegramSettings()" class="py-2.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl text-xs font-bold shadow-sm transition-all">Lưu cài đặt</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 5: Cấu hình Mẫu tin nhắn -->
-                <div id="setting-sec-template" class="hidden space-y-3">
-                    <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
-                        <h4 class="font-extrabold text-xs text-slate-800">Mẫu tin nhắn gửi khách (Zalo / SMS)</h4>
-                        <p class="text-[10px] text-slate-400 leading-relaxed">Hỗ trợ các biến tự động: <code class="bg-indigo-50 text-indigo-600 px-1 py-0.5 rounded font-bold">{ten}</code>, <code class="bg-indigo-50 text-indigo-600 px-1 py-0.5 rounded font-bold">{phong}</code>, <code class="bg-indigo-50 text-indigo-600 px-1 py-0.5 rounded font-bold">{thang}</code>, <code class="bg-indigo-50 text-indigo-600 px-1 py-0.5 rounded font-bold">{tien}</code></p>
-                        
-                        <textarea id="cfg-bill-template" rows="5" class="w-full p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs font-medium text-slate-700 outline-none"></textarea>
-
-                        <button onclick="saveBillTemplate()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs uppercase shadow-sm">Lưu mẫu tin nhắn</button>
-                    </div>
-                </div>
-            </div>
-
-        </main>
-
-        <!-- THANH ĐIỀU HƯỚNG DƯỚI (BOTTOM NAVIGATION) -->
-        <nav class="fixed bottom-0 max-w-lg w-full bg-white/95 backdrop-blur-lg border-t border-slate-200/80 px-2 py-2 safe-area-bottom z-40 flex justify-around items-center shadow-lg">
-            <button onclick="navigateTab('dashboard')" id="nav-dashboard" class="nav-btn flex-1 flex flex-col items-center py-1 gap-0.5 text-indigo-600 transition-all">
-                <i class="fa-solid fa-chart-pie text-base"></i>
-                <span class="text-[9px] font-bold">Tổng quan</span>
-            </button>
-            <button onclick="navigateTab('rooms')" id="nav-rooms" class="nav-btn flex-1 flex flex-col items-center py-1 gap-0.5 text-slate-400 hover:text-slate-600 transition-all">
-                <i class="fa-solid fa-border-all text-base"></i>
-                <span class="text-[9px] font-bold">Sơ đồ</span>
-            </button>
-            <button onclick="navigateTab('finance')" id="nav-finance" class="nav-btn flex-1 flex flex-col items-center py-1 gap-0.5 text-slate-400 hover:text-slate-600 transition-all">
-                <i class="fa-solid fa-calculator text-base"></i>
-                <span class="text-[9px] font-bold">Chốt sổ</span>
-            </button>
-            <button onclick="navigateTab('tenants')" id="nav-tenants" class="nav-btn flex-1 flex flex-col items-center py-1 gap-0.5 text-slate-400 hover:text-slate-600 transition-all">
-                <i class="fa-solid fa-receipt text-base"></i>
-                <span class="text-[9px] font-bold">Hóa đơn</span>
-            </button>
-            <button onclick="navigateTab('settings')" id="nav-settings" class="nav-btn flex-1 flex flex-col items-center py-1 gap-0.5 text-slate-400 hover:text-slate-600 transition-all">
-                <i class="fa-solid fa-sliders text-base"></i>
-                <span class="text-[9px] font-bold">Cài đặt</span>
-            </button>
-        </nav>
-
-        <!-- MAIN MODAL -->
-        <div id="mainModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl transition-all transform overflow-y-auto max-h-[85vh]">
-                <div id="modalContent"></div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- Script điều hướng Tab Bar & Đăng ký PWA Service Worker -->
-    <script>
-        function navigateTab(tabName) {
-            if (typeof window.switchTab === 'function') {
-                window.switchTab(tabName);
-            }
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('text-indigo-600');
-                btn.classList.add('text-slate-400');
-            });
-            const activeBtn = document.getElementById(`nav-${tabName}`);
-            if (activeBtn) {
-                activeBtn.classList.remove('text-slate-400');
-                activeBtn.classList.add('text-indigo-600');
-            }
-        }
-
-        // Đăng ký Service Worker PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then((reg) => console.log('HOMESTECH PWA registered:', reg.scope))
-                    .catch((err) => console.log('Service Worker failed:', err));
-            });
-        }
-    </script>
-    <script type="module" src="app.js"></script>
-</body>
-</html>
-
-3. File app.js (Đầy đủ 100%)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, onValue, set, push, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -431,7 +22,29 @@ let config = { electric: 3500, water: 15000, internet: 50000, garbage: 30000, pa
 let teleConfig = { botToken: "", chatId: "" };
 let defaultBillTemplate = "【HOMESTECH】Chào {ten}, hệ thống gửi bạn hóa đơn tiền phòng {phong} tháng {thang} với tổng số tiền cần thanh toán là: {tien}đ. Vui lòng thanh toán trước ngày 05 hàng tháng. Cảm ơn bạn!";
 
-// --- 1. LẮNG NGHE DỮ LIỆU FIREBASE REAL-TIME ---
+// --- HÀM HỖ TRỢ KIỂM TRA & LỌC DỊCH VỤ ĐIỆN / NƯỚC TRIỆT ĐỂ ---
+function isElectricOrWaterService(key) {
+    if (!key) return false;
+    const cleanKey = key.toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z]/g, "");
+    
+    const isElectric = cleanKey.includes('dien') || cleanKey.includes('electric');
+    const isWater = cleanKey.includes('nuoc') || cleanKey.includes('water');
+    return isElectric || isWater;
+}
+
+// Chuyển đổi nhãn hiển thị đơn giá nước khi chọn cách tính
+window.toggleWaterInputType = (type) => {
+    const label = document.getElementById('ci-water-label');
+    if (!label) return;
+    if (type === 'person') label.innerText = 'Giá nước (đ/người/tháng)';
+    else if (type === 'room') label.innerText = 'Giá nước trọn gói (đ/phòng/tháng)';
+    else label.innerText = 'Giá nước (đ/m³)';
+};
+
+// --- 1. LẮNG NGHE FIREBASE REAL-TIME ---
 onValue(ref(db, 'settings'), (snapshot) => {
     if (snapshot.exists()) {
         config = snapshot.val();
@@ -706,7 +319,7 @@ function renderRooms() {
     }).join('');
 }
 
-// --- 5. TÍNH TIỀN & CHỐT SỔ (TAB 3) ---
+// --- 5. TÍNH TIỀN & CHỐT SỔ (TAB 3) - HỖ TRỢ 3 HÌNH THỨC NƯỚC & LỌC TRIỆT ĐỂ ---
 function renderFinance() {
     const container = document.getElementById('view-finance'); 
     if (!container) return;
@@ -775,11 +388,61 @@ window.renderSpecificRoomFinance = (id) => {
     const lastE = Number(r.lastElectric || 0);
     const lastW = Number(r.lastWater || 0);
 
-    const rateElectric = Number(config.electric || config.gia_dien || config.dien || 3500);
-    const rateWater = Number(config.water || config.gia_nuoc || config.nuoc || 15000);
+    const rateElectric = Number(r.electricRate || config.electric || config.gia_dien || config.dien || 3500);
+    const rateWater = Number(r.waterRate || config.water || config.gia_nuoc || config.nuoc || 15000);
+    const waterCalcType = r.waterCalcType || 'm3';
+    const memberCount = (Array.isArray(r.members) && r.members.length > 0) ? r.members.length : 1;
 
-    const excludedKeys = ['electric', 'water', 'gia_dien', 'gia_nuoc', 'dien', 'nuoc'];
-    const otherServices = Object.keys(config).filter(k => !excludedKeys.includes(k.toLowerCase()));
+    // Lọc bỏ triệt để: loại mọi khóa liên quan tới điện và nước khỏi danh sách dịch vụ phụ trợ
+    const otherServices = Object.keys(config).filter(k => !isElectricOrWaterService(k));
+
+    // Xử lý khối giao diện nước theo cách tính
+    let waterBoxHTML = '';
+    if (waterCalcType === 'person') {
+        const totalWaterCost = memberCount * rateWater;
+        waterBoxHTML = `
+            <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1.5">
+                <div class="flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase">
+                    <span><i class="fa-solid fa-droplet text-blue-500 mr-1"></i>Nước (Theo người)</span>
+                    <span class="text-blue-600 font-extrabold">${memberCount} người</span>
+                </div>
+                <div class="p-2.5 bg-blue-50/60 rounded-xl text-xs font-black text-blue-700 flex justify-between items-center">
+                    <span class="text-[11px] font-semibold text-slate-500">${rateWater.toLocaleString()}đ/người</span>
+                    <span id="cost-w-display" class="font-extrabold text-blue-700">${totalWaterCost.toLocaleString()}đ</span>
+                </div>
+                <input type="hidden" id="cur-w" data-fixed="${totalWaterCost}" value="${lastW}">
+            </div>
+        `;
+    } else if (waterCalcType === 'room') {
+        waterBoxHTML = `
+            <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1.5">
+                <div class="flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase">
+                    <span><i class="fa-solid fa-droplet text-blue-500 mr-1"></i>Nước (Trọn gói)</span>
+                    <span class="text-blue-600 font-extrabold">Khoán</span>
+                </div>
+                <div class="p-2.5 bg-blue-50/60 rounded-xl text-xs font-black text-blue-700 flex justify-between items-center">
+                    <span class="text-[11px] font-semibold text-slate-500">Cố định/phòng</span>
+                    <span id="cost-w-display" class="font-extrabold text-blue-700">${rateWater.toLocaleString()}đ</span>
+                </div>
+                <input type="hidden" id="cur-w" data-fixed="${rateWater}" value="${lastW}">
+            </div>
+        `;
+    } else {
+        waterBoxHTML = `
+            <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1.5">
+                <div class="flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase">
+                    <span><i class="fa-solid fa-droplet text-blue-500 mr-1"></i>Nước (Cũ: ${lastW})</span>
+                    <span id="diff-w-badge" class="text-blue-600 font-extrabold">0 m³</span>
+                </div>
+                <input type="number" id="cur-w" data-old="${lastW}" data-rate="${rateWater}" oninput="updateLiveTotal('${id}')" 
+                    class="w-full p-2.5 bg-white rounded-xl border border-slate-200 font-black text-blue-600 text-sm outline-none" placeholder="Nhập số mới">
+                <div class="flex justify-between text-[10px] text-slate-400 font-semibold pt-0.5">
+                    <span>${rateWater.toLocaleString()}đ/m³</span>
+                    <span id="cost-w-display" class="font-extrabold text-slate-700">0đ</span>
+                </div>
+            </div>
+        `;
+    }
 
     detailContainer.innerHTML = `
         <div class="mt-4 pt-4 border-t border-slate-100 space-y-4 animate-in fade-in">
@@ -812,6 +475,7 @@ window.renderSpecificRoomFinance = (id) => {
             </div>
 
             <div class="grid grid-cols-2 gap-3">
+                <!-- KHỐI ĐIỆN -->
                 <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1.5">
                     <div class="flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase">
                         <span><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>Điện (Cũ: ${lastE})</span>
@@ -825,20 +489,11 @@ window.renderSpecificRoomFinance = (id) => {
                     </div>
                 </div>
 
-                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1.5">
-                    <div class="flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase">
-                        <span><i class="fa-solid fa-droplet text-blue-500 mr-1"></i>Nước (Cũ: ${lastW})</span>
-                        <span id="diff-w-badge" class="text-blue-600 font-extrabold">0 m³</span>
-                    </div>
-                    <input type="number" id="cur-w" data-old="${lastW}" data-rate="${rateWater}" oninput="updateLiveTotal('${id}')" 
-                        class="w-full p-2.5 bg-white rounded-xl border border-slate-200 font-black text-blue-600 text-sm outline-none" placeholder="Nhập số mới">
-                    <div class="flex justify-between text-[10px] text-slate-400 font-semibold pt-0.5">
-                        <span>${rateWater.toLocaleString()}đ/m³</span>
-                        <span id="cost-w-display" class="font-extrabold text-slate-700">0đ</span>
-                    </div>
-                </div>
+                <!-- KHỐI NƯỚC (LINH HOẠT THEO HÌNH THỨC) -->
+                ${waterBoxHTML}
             </div>
 
+            <!-- PHẦN DỊCH VỤ PHỤ TRỢ (KHÔNG CÒN ĐIỆN VÀ NƯỚC) -->
             <div class="space-y-1.5">
                 <span class="text-[10px] font-extrabold uppercase text-slate-400 ml-1">Dịch vụ phụ trợ</span>
                 <div id="serviceList" class="grid grid-cols-2 gap-2">
@@ -883,28 +538,33 @@ window.updateLiveTotal = (roomId) => {
     const elW = document.getElementById('cur-w');
 
     const lastE = Number(elE?.getAttribute('data-old') || 0);
-    const lastW = Number(elW?.getAttribute('data-old') || 0);
-    const rateE = Number(elE?.getAttribute('data-rate') || 3500);
-    const rateW = Number(elW?.getAttribute('data-rate') || 15000);
-
+    const rateE = Number(elE?.getAttribute('data-rate') || r.electricRate || 3500);
     const curEVal = elE?.value;
-    const curWVal = elW?.value;
-
     const curE = (curEVal !== "" && curEVal !== undefined) ? Number(curEVal) : lastE;
-    const curW = (curWVal !== "" && curWVal !== undefined) ? Number(curWVal) : lastW;
-
     const diffE = Math.max(0, curE - lastE);
-    const diffW = Math.max(0, curW - lastW);
     const eCost = diffE * rateE;
-    const wCost = diffW * rateW;
+
+    // Xử lý tiền nước động theo loại
+    let wCost = 0;
+    if (elW?.hasAttribute('data-fixed')) {
+        wCost = Number(elW.getAttribute('data-fixed')) || 0;
+    } else {
+        const lastW = Number(elW?.getAttribute('data-old') || 0);
+        const rateW = Number(elW?.getAttribute('data-rate') || r.waterRate || 15000);
+        const curWVal = elW?.value;
+        const curW = (curWVal !== "" && curWVal !== undefined) ? Number(curWVal) : lastW;
+        const diffW = Math.max(0, curW - lastW);
+        wCost = diffW * rateW;
+
+        const diffWBadge = document.getElementById('diff-w-badge');
+        if (diffWBadge) diffWBadge.innerText = `${diffW} m³`;
+    }
 
     const diffEBadge = document.getElementById('diff-e-badge');
-    const diffWBadge = document.getElementById('diff-w-badge');
     const costEDisplay = document.getElementById('cost-e-display');
     const costWDisplay = document.getElementById('cost-w-display');
 
     if (diffEBadge) diffEBadge.innerText = `${diffE} kWh`;
-    if (diffWBadge) diffWBadge.innerText = `${diffW} m³`;
     if (costEDisplay) costEDisplay.innerText = `${eCost.toLocaleString()}đ`;
     if (costWDisplay) costWDisplay.innerText = `${wCost.toLocaleString()}đ`;
 
@@ -935,18 +595,13 @@ window.finalizeBill = async (roomId, isPaid) => {
     const curEVal = document.getElementById('cur-e')?.value;
     const curWVal = document.getElementById('cur-w')?.value;
 
-    if (curEVal === "" || curWVal === "") {
-        return alert("Vui lòng nhập đầy đủ chỉ số Điện và Nước mới!");
+    if (curEVal === "") {
+        return alert("Vui lòng nhập chỉ số Điện mới!");
     }
 
     const curE = Number(curEVal);
-    const curW = Number(curWVal);
-
     if (curE < lastE) {
         return alert(`Chỉ số điện mới (${curE}) không được nhỏ hơn chỉ số cũ (${lastE})!`);
-    }
-    if (curW < lastW) {
-        return alert(`Chỉ số nước mới (${curW}) không được nhỏ hơn chỉ số cũ (${lastW})!`);
     }
 
     const month = parseInt(document.getElementById('financeMonth').value);
@@ -954,13 +609,32 @@ window.finalizeBill = async (roomId, isPaid) => {
     const prepaidMonths = Math.max(1, Number(document.getElementById('prepaidMonths').value) || 1);
     const discount = Number(document.getElementById('discountAmount').value) || 0;
 
-    const rateE = Number(config.electric || config.gia_dien || config.dien || 3500);
-    const rateW = Number(config.water || config.gia_nuoc || config.nuoc || 15000);
+    const rateE = Number(r.electricRate || config.electric || config.gia_dien || 3500);
+    const rateW = Number(r.waterRate || config.water || config.gia_nuoc || 15000);
+    const waterCalcType = r.waterCalcType || 'm3';
+    const memberCount = (Array.isArray(r.members) && r.members.length > 0) ? r.members.length : 1;
 
     const diffE = curE - lastE;
-    const diffW = curW - lastW;
     const electricCost = diffE * rateE;
-    const waterCost = diffW * rateW;
+
+    // Tính tiền nước theo hình thức
+    let diffW = 0;
+    let waterCost = 0;
+    let finalCurW = lastW;
+
+    if (waterCalcType === 'person') {
+        waterCost = memberCount * rateW;
+    } else if (waterCalcType === 'room') {
+        waterCost = rateW;
+    } else {
+        if (curWVal === "") return alert("Vui lòng nhập chỉ số Nước mới!");
+        finalCurW = Number(curWVal);
+        if (finalCurW < lastW) {
+            return alert(`Chỉ số nước mới (${finalCurW}) không được nhỏ hơn chỉ số cũ (${lastW})!`);
+        }
+        diffW = finalCurW - lastW;
+        waterCost = diffW * rateW;
+    }
     
     const basePrice = Number(r.basePrice) || 0;
     const daysInMonth = new Date(year, month, 0).getDate();
@@ -978,6 +652,7 @@ window.finalizeBill = async (roomId, isPaid) => {
     let totalServices = 0;
     document.querySelectorAll('.service-check:checked').forEach(cb => {
         const key = cb.getAttribute('data-key');
+        if (isElectricOrWaterService(key)) return;
         const val = Number(cb.getAttribute('data-val')) || 0;
         servicesDetail.push({ name: key, price: val });
         totalServices += val;
@@ -995,7 +670,15 @@ window.finalizeBill = async (roomId, isPaid) => {
         basePrice,
         roomAmount: totalRoomPrice,
         electric: { old: lastE, new: curE, usage: diffE, rate: rateE, cost: electricCost },
-        water: { old: lastW, new: curW, usage: diffW, rate: rateW, cost: waterCost },
+        water: { 
+            type: waterCalcType,
+            old: lastW, 
+            new: finalCurW, 
+            usage: diffW, 
+            rate: rateW, 
+            cost: waterCost,
+            note: waterCalcType === 'person' ? `${memberCount} người x ${rateW.toLocaleString()}đ` : (waterCalcType === 'room' ? 'Khoán phòng' : `${diffW} m³`)
+        },
         services: servicesDetail,
         servicesAmount: totalServices,
         discount,
@@ -1013,7 +696,7 @@ window.finalizeBill = async (roomId, isPaid) => {
 
         await update(ref(db, `rooms/${roomId}`), { 
             lastElectric: curE, 
-            lastWater: curW,
+            lastWater: finalCurW,
             nextPaymentDate: nextPayDate.toISOString().split('T')[0],
             debtAmount: isPaid ? 0 : totalAmount,
             debtMonth: isPaid ? null : month
@@ -1107,6 +790,13 @@ window.filterBills = () => {
         const isPaid = b.status === 'paid';
         const dateStr = new Date(b.timestamp).toLocaleDateString('vi-VN');
         
+        let waterUsageText = '---';
+        if (b.water) {
+            if (b.water.type === 'person') waterUsageText = 'Theo người';
+            else if (b.water.type === 'room') waterUsageText = 'Khoán';
+            else waterUsageText = `${b.water.usage} m³`;
+        }
+
         return `
         <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200/80 space-y-3 hover:border-indigo-200 transition-all">
             <div class="flex justify-between items-start">
@@ -1132,7 +822,7 @@ window.filterBills = () => {
             <div class="grid grid-cols-3 gap-1 py-2 px-3 bg-slate-50 rounded-2xl text-[10px] text-slate-500 font-semibold border border-slate-100">
                 <div>Phòng: <span class="text-slate-800 font-bold">${Number(b.roomAmount || b.basePrice || 0).toLocaleString()}đ</span></div>
                 <div>Điện: <span class="text-slate-800 font-bold">${b.electric ? `${b.electric.usage} kWh` : '---'}</span></div>
-                <div>Nước: <span class="text-slate-800 font-bold">${b.water ? `${b.water.usage} m³` : '---'}</span></div>
+                <div>Nước: <span class="text-slate-800 font-bold">${waterUsageText}</span></div>
             </div>
 
             <div class="flex items-center gap-1.5 pt-1 border-t border-slate-100 text-xs font-bold">
@@ -1171,9 +861,19 @@ window.viewBillDetailModal = (year, month, billId) => {
     modal.classList.remove('hidden');
 
     const e = bill.electric || { old: 0, new: 0, usage: 0, cost: 0, rate: 0 };
-    const w = bill.water || { old: 0, new: 0, usage: 0, cost: 0, rate: 0 };
+    const w = bill.water || { old: 0, new: 0, usage: 0, cost: 0, rate: 0, type: 'm3' };
     const services = Array.isArray(bill.services) ? bill.services : [];
     const isPaid = bill.status === 'paid';
+
+    let waterDetailSub = `Số cũ: ${w.old} ➔ Số mới: ${w.new} (${Number(w.rate || 0).toLocaleString()}đ/m³)`;
+    let waterTitle = `Tiền nước (${w.usage} m³)`;
+    if (w.type === 'person') {
+        waterTitle = `Tiền nước (Theo đầu người)`;
+        waterDetailSub = w.note || `${Number(w.rate || 0).toLocaleString()}đ/người`;
+    } else if (w.type === 'room') {
+        waterTitle = `Tiền nước (Trọn gói phòng)`;
+        waterDetailSub = `Khoán cố định theo tháng`;
+    }
 
     content.innerHTML = `
         <div class="space-y-4 text-slate-800">
@@ -1212,8 +912,8 @@ window.viewBillDetailModal = (year, month, billId) => {
 
                 <div class="flex justify-between">
                     <div>
-                        <span>Tiền nước (${w.usage} m³)</span>
-                        <p class="text-[9px] text-slate-400">Số cũ: ${w.old} ➔ Số mới: ${w.new} (${Number(w.rate || 0).toLocaleString()}đ/m³)</p>
+                        <span>${waterTitle}</span>
+                        <p class="text-[9px] text-slate-400">${waterDetailSub}</p>
                     </div>
                     <span class="font-bold text-slate-800">${Number(w.cost || 0).toLocaleString()}đ</span>
                 </div>
@@ -1255,15 +955,24 @@ window.copyBillText = (year, month, billId) => {
     if (!bill) return;
 
     const e = bill.electric || { old: 0, new: 0, usage: 0, cost: 0, rate: 0 };
-    const w = bill.water || { old: 0, new: 0, usage: 0, cost: 0, rate: 0 };
+    const w = bill.water || { old: 0, new: 0, usage: 0, cost: 0, rate: 0, type: 'm3' };
     const services = Array.isArray(bill.services) ? bill.services : [];
+
+    let waterStr = '';
+    if (w.type === 'person') {
+        waterStr = `3. Tiền nước (theo người): ${Number(w.cost || 0).toLocaleString()}đ\n`;
+    } else if (w.type === 'room') {
+        waterStr = `3. Tiền nước (khoán phòng): ${Number(w.cost || 0).toLocaleString()}đ\n`;
+    } else {
+        waterStr = `3. Tiền nước (${w.usage} m³: ${w.old} -> ${w.new}): ${Number(w.cost || 0).toLocaleString()}đ\n`;
+    }
 
     let msg = `🏠 THÔNG BÁO TIỀN PHÒNG THÁNG ${bill.month}/${bill.year}\n`;
     msg += `📍 Phòng: ${bill.roomNumber} - Khách thuê: ${bill.tenantName}\n`;
     msg += `---------------------------------\n`;
     msg += `1. Tiền phòng: ${Number(bill.roomAmount || bill.basePrice || 0).toLocaleString()}đ\n`;
     msg += `2. Tiền điện (${e.usage} kWh: ${e.old} -> ${e.new}): ${Number(e.cost || 0).toLocaleString()}đ\n`;
-    msg += `3. Tiền nước (${w.usage} m³: ${w.old} -> ${w.new}): ${Number(w.cost || 0).toLocaleString()}đ\n`;
+    msg += waterStr;
     
     if (services.length > 0) {
         services.forEach((s, idx) => {
@@ -1330,7 +1039,7 @@ window.exportMonthBillsCSV = () => {
     document.body.removeChild(link);
 };
 
-// --- 7. QUẢN LÝ THÔNG TIN LƯU TRÚ, CCCD & HỢP ĐỒNG ---
+// --- 7. QUẢN LÝ LƯU TRÚ, CCCD, GIÁ ĐIỆN NƯỚC RIÊNG & 3 CÁCH TÍNH NƯỚC ---
 function compressAndConvertImage(file, maxWidth = 1000, quality = 0.7) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -1418,6 +1127,14 @@ function renderRoomDetail(id, container) {
     if (!r) return;
     let actionHTML = "";
 
+    const defaultElec = Number(r.electricRate || config.electric || 3500);
+    const defaultWater = Number(r.waterRate || config.water || 15000);
+    const curCalcType = r.waterCalcType || 'm3';
+
+    let waterRateUnitText = 'đ/m³';
+    if (curCalcType === 'person') waterRateUnitText = 'đ/người';
+    else if (curCalcType === 'room') waterRateUnitText = 'đ/phòng';
+
     if (r.status === 'empty') {
         actionHTML = `
             <div class="space-y-3">
@@ -1436,7 +1153,7 @@ function renderRoomDetail(id, container) {
                         </button>
                     </div>
 
-                    <div id="memberListInputs" class="space-y-3 max-h-[250px] overflow-y-auto pr-1">
+                    <div id="memberListInputs" class="space-y-3 max-h-[200px] overflow-y-auto pr-1">
                         <div class="member-card bg-white p-3 rounded-2xl border border-slate-200/80 space-y-2">
                             <span class="text-[9px] font-extrabold uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Khách 1 (Trưởng phòng)</span>
                             <input type="text" class="m-name w-full p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold outline-none" placeholder="Họ và tên (*)">
@@ -1486,14 +1203,38 @@ function renderRoomDetail(id, container) {
                                 <input type="date" id="ci-date" value="${new Date().toISOString().split('T')[0]}" class="w-full p-2.5 bg-white rounded-xl border border-slate-200 text-xs font-semibold outline-none">
                             </div>
                         </div>
+
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">Điện bàn giao</label>
-                                <input type="number" id="ci-electric" placeholder="Số điện" class="w-full p-2.5 bg-white rounded-xl border border-slate-200 text-xs font-semibold outline-none">
+                                <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">Điện bàn giao (kWh)</label>
+                                <input type="number" id="ci-electric" placeholder="0" class="w-full p-2.5 bg-white rounded-xl border border-slate-200 text-xs font-semibold outline-none">
                             </div>
                             <div>
-                                <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">Nước bàn giao</label>
-                                <input type="number" id="ci-water" placeholder="Số nước" class="w-full p-2.5 bg-white rounded-xl border border-slate-200 text-xs font-semibold outline-none">
+                                <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">Nước bàn giao (m³)</label>
+                                <input type="number" id="ci-water" placeholder="0" class="w-full p-2.5 bg-white rounded-xl border border-slate-200 text-xs font-semibold outline-none">
+                            </div>
+                        </div>
+
+                        <!-- CẤU HÌNH ĐƠN GIÁ ĐIỆN & 3 HÌNH THỨC NƯỚC RIÊNG CHO PHÒNG -->
+                        <div class="bg-indigo-50/70 p-2.5 rounded-2xl border border-indigo-100 space-y-2">
+                            <span class="text-[9px] font-extrabold uppercase text-indigo-700 ml-1">Đơn giá điện & nước riêng phòng này</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[8px] font-bold text-slate-400 uppercase ml-1">Giá điện (đ/kWh)</label>
+                                    <input type="number" id="ci-rate-electric" value="${defaultElec}" class="w-full p-2 bg-white rounded-xl border border-indigo-200 text-xs font-black text-indigo-600 outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[8px] font-bold text-slate-400 uppercase ml-1">Cách tính nước</label>
+                                    <select id="ci-water-calc-type" onchange="toggleWaterInputType(this.value)" class="w-full p-2 bg-white rounded-xl border border-indigo-200 text-xs font-bold text-slate-700 outline-none">
+                                        <option value="m3">Theo khối (m³)</option>
+                                        <option value="person">Theo đầu người</option>
+                                        <option value="room">Cố định theo phòng</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label id="ci-water-label" class="text-[8px] font-bold text-slate-400 uppercase ml-1">Giá nước (đ/m³)</label>
+                                <input type="number" id="ci-rate-water" value="${defaultWater}" class="w-full p-2 bg-white rounded-xl border border-indigo-200 text-xs font-black text-blue-600 outline-none">
                             </div>
                         </div>
                     </div>
@@ -1546,7 +1287,7 @@ function renderRoomDetail(id, container) {
                         </button>
                     </div>
 
-                    <div id="memberListInputs" class="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+                    <div id="memberListInputs" class="space-y-3 max-h-[200px] overflow-y-auto pr-1">
                         <div class="member-card bg-white p-3 rounded-2xl border border-slate-200/80 space-y-2">
                             <span class="text-[9px] font-extrabold uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Khách 1 (Người đại diện cọc)</span>
                             <input type="text" class="m-name w-full p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold outline-none" placeholder="Họ và tên (*)" value="${bk.name || ''}">
@@ -1593,12 +1334,35 @@ function renderRoomDetail(id, container) {
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">Điện bàn giao</label>
-                                <input type="number" id="ci-electric" placeholder="Số điện" class="w-full p-2.5 bg-white rounded-xl border border-slate-200 text-xs font-semibold outline-none">
+                                <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">Điện bàn giao (kWh)</label>
+                                <input type="number" id="ci-electric" placeholder="0" class="w-full p-2.5 bg-white rounded-xl border border-slate-200 text-xs font-semibold outline-none">
                             </div>
                             <div>
-                                <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">Nước bàn giao</label>
-                                <input type="number" id="ci-water" placeholder="Số nước" class="w-full p-2.5 bg-white rounded-xl border border-slate-200 text-xs font-semibold outline-none">
+                                <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">Nước bàn giao (m³)</label>
+                                <input type="number" id="ci-water" placeholder="0" class="w-full p-2.5 bg-white rounded-xl border border-slate-200 text-xs font-semibold outline-none">
+                            </div>
+                        </div>
+
+                        <!-- CẤU HÌNH ĐƠN GIÁ ĐIỆN & 3 HÌNH THỨC NƯỚC RIÊNG -->
+                        <div class="bg-indigo-50/70 p-2.5 rounded-2xl border border-indigo-100 space-y-2">
+                            <span class="text-[9px] font-extrabold uppercase text-indigo-700 ml-1">Đơn giá điện nước áp dụng riêng phòng này</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[8px] font-bold text-slate-400 uppercase ml-1">Giá điện (đ/kWh)</label>
+                                    <input type="number" id="ci-rate-electric" value="${defaultElec}" class="w-full p-2 bg-white rounded-xl border border-indigo-200 text-xs font-black text-indigo-600 outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[8px] font-bold text-slate-400 uppercase ml-1">Cách tính nước</label>
+                                    <select id="ci-water-calc-type" onchange="toggleWaterInputType(this.value)" class="w-full p-2 bg-white rounded-xl border border-indigo-200 text-xs font-bold text-slate-700 outline-none">
+                                        <option value="m3">Theo khối (m³)</option>
+                                        <option value="person">Theo đầu người</option>
+                                        <option value="room">Cố định theo phòng</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label id="ci-water-label" class="text-[8px] font-bold text-slate-400 uppercase ml-1">Giá nước (đ/m³)</label>
+                                <input type="number" id="ci-rate-water" value="${defaultWater}" class="w-full p-2 bg-white rounded-xl border border-indigo-200 text-xs font-black text-blue-600 outline-none">
                             </div>
                         </div>
                     </div>
@@ -1631,7 +1395,7 @@ function renderRoomDetail(id, container) {
                     </button>
                 </div>
 
-                <div class="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                <div class="space-y-2 max-h-[180px] overflow-y-auto pr-1">
                     ${memberList.map((m, idx) => `
                         <div class="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm space-y-1.5 text-xs">
                             <div class="flex justify-between items-start">
@@ -1663,6 +1427,7 @@ function renderRoomDetail(id, container) {
                     `).join('')}
                 </div>
 
+                <!-- ẢNH CCCD LƯU TRỮ -->
                 <div class="bg-white p-3 rounded-2xl border border-slate-200/80 space-y-1.5">
                     <span class="text-[10px] font-extrabold uppercase text-slate-500 block">Hình ảnh CCCD lưu trữ</span>
                     <div class="grid grid-cols-2 gap-2">
@@ -1695,13 +1460,18 @@ function renderRoomDetail(id, container) {
                         <span class="font-bold text-indigo-600">${calculateStayDuration(r.checkInDate)}</span>
                     </div>
                     <div>
-                        <span class="text-[9px] font-bold text-slate-400 uppercase block">Ngày vào</span>
-                        <span class="font-bold text-slate-700">${r.checkInDate || '---'}</span>
+                        <div class="flex items-center gap-1 justify-end">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase">Điện / Nước</span>
+                            <button onclick="openEditRoomRatesModal('${id}')" title="Chỉnh sửa đơn giá điện nước riêng" class="text-indigo-600 hover:text-indigo-800 p-0.5">
+                                <i class="fa-solid fa-pen-to-square text-[10px]"></i>
+                            </button>
+                        </div>
+                        <span class="font-bold text-slate-700 block text-right">${Number(r.electricRate || defaultElec).toLocaleString()}đ / ${Number(r.waterRate || defaultWater).toLocaleString()}${waterRateUnitText}</span>
                     </div>
                 </div>
 
-                <button onclick="generateRentalContractModal('${id}')" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-black uppercase shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-file-contract"></i> Xuất Hợp Đồng Thuê Trọ Tự Động
+                <button onclick="window.open('./hopdong.html?roomId=${id}', '_blank')" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-black uppercase shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-file-contract"></i> Mở & Chỉnh Sửa Hợp Đồng Thuê Trọ
                 </button>
 
                 <div class="grid grid-cols-2 gap-2 pt-1">
@@ -1781,6 +1551,10 @@ window.saveMultipleMembersCheckIn = async (roomId) => {
     const startE = Number(document.getElementById('ci-electric')?.value) || 0;
     const startW = Number(document.getElementById('ci-water')?.value) || 0;
 
+    const electricRate = Number(document.getElementById('ci-rate-electric')?.value) || Number(config.electric || 3500);
+    const waterRate = Number(document.getElementById('ci-rate-water')?.value) || Number(config.water || 15000);
+    const waterCalcType = document.getElementById('ci-water-calc-type')?.value || 'm3';
+
     const cccdFront = document.getElementById('ci-cccd-front')?.value || "";
     const cccdBack = document.getElementById('ci-cccd-back')?.value || "";
 
@@ -1794,6 +1568,9 @@ window.saveMultipleMembersCheckIn = async (roomId) => {
         checkInDate: checkInDate,
         lastElectric: startE,
         lastWater: startW,
+        electricRate: electricRate,
+        waterRate: waterRate,
+        waterCalcType: waterCalcType,
         cccdFront: cccdFront,
         cccdBack: cccdBack,
         booking: null,
@@ -1887,13 +1664,14 @@ window.updateStatus = async (id, status) => {
         updates.nextPaymentDate = null;
         updates.cccdFront = null;
         updates.cccdBack = null;
+        updates.customContractHTML = null;
     }
     await update(ref(db, `rooms/${id}`), updates);
     closeModal();
 };
 
-// --- HÀM TẠO VÀ IN HỢP ĐỒNG THUÊ TRỌ ---
-window.generateRentalContractModal = (roomId) => {
+// Modal mở form chỉnh sửa đơn giá điện & 3 cách tính nước riêng cho phòng đang ở
+window.openEditRoomRatesModal = (roomId) => {
     const r = rooms.find(room => room.id === roomId);
     if (!r) return;
 
@@ -1901,101 +1679,83 @@ window.generateRentalContractModal = (roomId) => {
     const content = document.getElementById('modalContent');
     modal.classList.remove('hidden');
 
-    const memberList = Array.isArray(r.members) && r.members.length > 0 
-        ? r.members 
-        : [{ name: r.tenantName, phone: r.tenantPhone, cccd: r.tenantCCCD, hometown: r.tenantHometown }];
-
-    const primaryTenant = memberList[0] || {};
-    const others = memberList.slice(1);
-    const startDate = new Date(r.checkInDate || Date.now());
-    const day = startDate.getDate();
-    const month = startDate.getMonth() + 1;
-    const year = startDate.getFullYear();
-
-    const rateE = Number(config.electric || config.gia_dien || 3500);
-    const rateW = Number(config.water || config.gia_nuoc || 15000);
+    const curElec = Number(r.electricRate || config.electric || 3500);
+    const curWater = Number(r.waterRate || config.water || 15000);
+    const curCalcType = r.waterCalcType || 'm3';
 
     content.innerHTML = `
-        <div class="space-y-4">
-            <div class="flex justify-between items-center pb-2 border-b no-print">
-                <h3 class="text-sm font-black uppercase text-indigo-700 flex items-center gap-1.5">
-                    <i class="fa-solid fa-file-contract"></i> Hợp Đồng Thuê Phòng Trọ
-                </h3>
-                <div class="flex gap-2">
-                    <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl font-bold text-xs uppercase shadow flex items-center gap-1">
-                        <i class="fa-solid fa-print"></i> In / Xuất PDF
-                    </button>
-                    <button onclick="closeModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:bg-slate-200 flex items-center justify-center">
-                        <i class="fa-solid fa-times text-xs"></i>
-                    </button>
+        <div class="space-y-4 text-slate-800">
+            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                <div>
+                    <h3 class="text-base font-black uppercase text-indigo-600">Sửa Đơn Giá Điện / Nước</h3>
+                    <p class="text-[10px] font-bold text-slate-400">Phòng ${r.roomNumber} - ${r.tenantName || 'Khách thuê'}</p>
                 </div>
+                <button onclick="openModal('detail', '${roomId}')" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 hover:bg-slate-200 flex items-center justify-center">
+                    <i class="fa-solid fa-times text-xs"></i>
+                </button>
             </div>
 
-            <div id="printableContract" class="p-6 bg-white border border-slate-200 rounded-2xl text-slate-800 text-[13px] leading-relaxed space-y-4 max-h-[75vh] overflow-y-auto font-sans">
-                <div class="text-center space-y-1">
-                    <p class="font-bold text-xs uppercase tracking-wider">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
-                    <p class="font-bold text-xs underline">Độc lập - Tự do - Hạnh phúc</p>
-                    <h2 class="text-base font-black uppercase pt-3 text-slate-900">HỢP ĐỒNG THUÊ PHÒNG TRỌ</h2>
-                    <p class="text-[11px] italic text-slate-500">Hôm nay, ngày ${day} tháng ${month} năm ${year}, tại địa chỉ nhà trọ.</p>
-                </div>
-
-                <div class="space-y-2">
-                    <p class="font-bold text-slate-900 uppercase text-xs border-b pb-1">BÊN CHO THUÊ (BÊN A):</p>
-                    <div class="grid grid-cols-2 gap-1 text-[12px]">
-                        <p><b>Đại diện quản lý:</b> HOMESTECH</p>
-                        <p><b>Số điện thoại:</b> .....................................</p>
-                        <p class="col-span-2"><b>Địa chỉ nhà trọ:</b> Khu vực ${r.zone || 'Tòa nhà'}</p>
+            <div class="space-y-3">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Đơn giá điện (VNĐ/kWh)</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-bolt text-amber-500 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
+                        <input type="number" id="edit-room-rate-elec" value="${curElec}" class="w-full pl-8 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-indigo-600 outline-none">
                     </div>
                 </div>
 
-                <div class="space-y-2 text-[12px]">
-                    <p class="font-bold text-slate-900 uppercase text-xs border-b pb-1">BÊN THUÊ PHÒNG (BÊN B):</p>
-                    <div class="grid grid-cols-2 gap-1 text-[12px]">
-                        <p><b>Họ và tên:</b> <span class="uppercase font-bold text-slate-900">${primaryTenant.name || '.....................................'}</span></p>
-                        <p><b>Số điện thoại:</b> ${primaryTenant.phone || '.....................................'}</p>
-                        <p><b>Số CCCD/CMND:</b> ${primaryTenant.cccd || '.....................................'}</p>
-                        <p><b>Biển số xe:</b> ${primaryTenant.license || 'Không có'}</p>
-                        <p class="col-span-2"><b>Quê quán / Thường trú:</b> ${primaryTenant.hometown || '.....................................................................'}</p>
-                    </div>
-
-                    ${others.length > 0 ? `
-                        <div class="mt-2 pt-2 border-t border-dashed">
-                            <p class="font-bold text-[12px] text-slate-700">Các thành viên ở cùng phòng (${others.length} người):</p>
-                            <ul class="list-disc pl-5 text-[11px] space-y-0.5 mt-1">
-                                ${others.map(o => `<li><b>${o.name}</b> - SĐT: ${o.phone || '---'} - CCCD: ${o.cccd || '---'} (Xe: ${o.license || '---'})</li>`).join('')}
-                            </ul>
-                        </div>
-                    ` : ''}
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Cách tính tiền nước</label>
+                    <select id="edit-room-water-type" onchange="document.getElementById('edit-water-unit').innerText = this.value === 'person' ? 'VNĐ/người/tháng' : (this.value === 'room' ? 'VNĐ/phòng/tháng' : 'VNĐ/m³')" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none">
+                        <option value="m3" ${curCalcType === 'm3' ? 'selected' : ''}>Theo khối (m³)</option>
+                        <option value="person" ${curCalcType === 'person' ? 'selected' : ''}>Theo đầu người (người/tháng)</option>
+                        <option value="room" ${curCalcType === 'room' ? 'selected' : ''}>Cố định theo phòng (phòng/tháng)</option>
+                    </select>
                 </div>
 
-                <div class="space-y-2 text-[12px]">
-                    <p class="font-bold text-slate-900 uppercase text-xs border-b pb-1">ĐIỀU KHOẢN HỢP ĐỒNG:</p>
-                    <p><b>1. Phòng thuê:</b> Phòng số <b>${r.roomNumber}</b> thuộc ${r.zone || 'Khu nhà trọ'}.</p>
-                    <p><b>2. Giá thuê phòng:</b> <b>${Number(r.basePrice || 0).toLocaleString()} VNĐ/tháng</b> <i>(Bằng chữ: ..............................................................)</i>.</p>
-                    <p><b>3. Tiền đặt cọc:</b> <b>${Number(r.depositAmount || 0).toLocaleString()} VNĐ</b>. Số tiền này dùng để đảm bảo thực hiện hợp đồng và hoàn trả khi hết hạn hợp đồng sau khi khấu trừ chi phí hư hỏng/tiền điện nước (nếu có).</p>
-                    <p><b>4. Chi phí dịch vụ:</b></p>
-                    <ul class="list-disc pl-5 space-y-0.5">
-                        <li>Tiền điện: <b>${rateE.toLocaleString()} VNĐ/kWh</b> (Chỉ số bàn giao bắt đầu: <b>${r.lastElectric || 0}</b> kWh).</li>
-                        <li>Tiền nước: <b>${rateW.toLocaleString()} VNĐ/m³</b> (Chỉ số bàn giao bắt đầu: <b>${r.lastWater || 0}</b> m³).</li>
-                        <li>Các dịch vụ khác theo biểu giá niêm yết hiện hành của nhà trọ.</li>
-                    </ul>
-                    <p><b>5. Kỳ hạn thanh toán:</b> Tiền phòng và chi phí điện nước được tính toán và thanh toán định kỳ từ ngày 01 đến ngày 05 hàng tháng.</p>
-                    <p><b>6. Trách nhiệm chung:</b> Bên B chấp hành đúng nội quy phòng trọ, đăng ký tạm trú theo quy định, giữ gìn vệ sinh chung, không chứa chất cháy nổ hoặc hàng cấm. Báo trước tối thiểu 30 ngày nếu có nhu cầu trả phòng.</p>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Mức giá nước (<span id="edit-water-unit">${curCalcType === 'person' ? 'VNĐ/người/tháng' : (curCalcType === 'room' ? 'VNĐ/phòng/tháng' : 'VNĐ/m³')}</span>)</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-droplet text-blue-500 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
+                        <input type="number" id="edit-room-rate-water" value="${curWater}" class="w-full pl-8 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-blue-600 outline-none">
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 pt-6 text-center text-[12px]">
-                    <div class="space-y-12">
-                        <p class="font-bold uppercase">ĐẠI DIỆN BÊN B (BÊN THUÊ)</p>
-                        <p class="font-bold uppercase">${primaryTenant.name || ''}</p>
-                    </div>
-                    <div class="space-y-12">
-                        <p class="font-bold uppercase">ĐẠI DIỆN BÊN A (BÊN CHO THUÊ)</p>
-                        <p class="font-bold uppercase">HOMESTECH</p>
-                    </div>
+                <p class="text-[10px] text-slate-400 italic">
+                    * Đơn giá mới sẽ được áp dụng trực tiếp cho các kỳ tính tiền & chốt sổ tiếp theo của phòng này.
+                </p>
+
+                <div class="grid grid-cols-2 gap-2 pt-2">
+                    <button type="button" onclick="openModal('detail', '${roomId}')" class="py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase">Hủy</button>
+                    <button type="button" onclick="saveUpdatedRoomRates('${roomId}')" class="py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs uppercase shadow-md active:scale-95 transition-all">Lưu đơn giá</button>
                 </div>
             </div>
         </div>
     `;
+};
+
+window.saveUpdatedRoomRates = async (roomId) => {
+    const newElec = Number(document.getElementById('edit-room-rate-elec')?.value);
+    const newWater = Number(document.getElementById('edit-room-rate-water')?.value);
+    const waterType = document.getElementById('edit-room-water-type')?.value || 'm3';
+
+    if (isNaN(newElec) || newElec < 0 || isNaN(newWater) || newWater < 0) {
+        alert("Vui lòng nhập đơn giá hợp lệ!");
+        return;
+    }
+
+    try {
+        await update(ref(db, `rooms/${roomId}`), {
+            electricRate: newElec,
+            waterRate: newWater,
+            waterCalcType: waterType
+        });
+
+        alert("Đã cập nhật biểu giá điện & nước thành công!");
+        openModal('detail', roomId);
+    } catch (e) {
+        alert("Lỗi khi cập nhật đơn giá: " + e.message);
+    }
 };
 
 // --- 8. QUẢN LÝ PHÒNG & MODALS TRONG TAB CÀI ĐẶT ---
@@ -2016,10 +1776,10 @@ function renderRoomsManagementList() {
             </div>
             <div class="flex items-center gap-1.5">
                 <button onclick="openModal('edit-room', '${r.id}')" class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-slate-200 text-xs">
-                    <i class="fa fa-edit"></i>
+                    <i class="fa-edit fa-solid"></i>
                 </button>
                 <button onclick="deleteRoom('${r.id}')" class="w-8 h-8 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center hover:bg-rose-100 text-xs">
-                    <i class="fa fa-trash"></i>
+                    <i class="fa-trash fa-solid"></i>
                 </button>
             </div>
         </div>
@@ -2337,9 +2097,11 @@ window.openEditBillModal = (year, month, billId) => {
     modal.classList.remove('hidden');
 
     const e = bill.electric || { old: 0, new: 0, rate: config.electric || 3500 };
-    const w = bill.water || { old: 0, new: 0, rate: config.water || 15000 };
+    const w = bill.water || { old: 0, new: 0, rate: config.water || 15000, type: 'm3', cost: 0 };
     const roomAmount = Number(bill.roomAmount || bill.basePrice || 0);
     const servicesAmount = Number(bill.servicesAmount || 0);
+
+    const isMeteredWater = !w.type || w.type === 'm3';
 
     content.innerHTML = `
         <div class="space-y-4 text-slate-800">
@@ -2373,19 +2135,26 @@ window.openEditBillModal = (year, month, billId) => {
                     </div>
                 </div>
 
-                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-2">
-                    <span class="text-[10px] font-extrabold uppercase text-slate-400">Chỉ số Nước (Đơn giá: ${Number(w.rate || 15000).toLocaleString()}đ)</span>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-[9px] text-slate-400 font-semibold ml-1">Số cũ</label>
-                            <input type="number" id="edit-w-old" value="${w.old}" data-rate="${w.rate || 15000}" oninput="recalcEditBillTotal()" class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none">
-                        </div>
-                        <div>
-                            <label class="text-[9px] text-slate-400 font-semibold ml-1">Số mới</label>
-                            <input type="number" id="edit-w-new" value="${w.new}" oninput="recalcEditBillTotal()" class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-blue-600 outline-none">
+                ${isMeteredWater ? `
+                    <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-2">
+                        <span class="text-[10px] font-extrabold uppercase text-slate-400">Chỉ số Nước (Đơn giá: ${Number(w.rate || 15000).toLocaleString()}đ/m³)</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[9px] text-slate-400 font-semibold ml-1">Số cũ</label>
+                                <input type="number" id="edit-w-old" value="${w.old}" data-rate="${w.rate || 15000}" oninput="recalcEditBillTotal()" class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[9px] text-slate-400 font-semibold ml-1">Số mới</label>
+                                <input type="number" id="edit-w-new" value="${w.new}" oninput="recalcEditBillTotal()" class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-blue-600 outline-none">
+                            </div>
                         </div>
                     </div>
-                </div>
+                ` : `
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Tiền nước (${w.type === 'person' ? 'Theo người' : 'Khoán phòng'})</label>
+                        <input type="number" id="edit-fixed-water" value="${Number(w.cost || 0)}" oninput="recalcEditBillTotal()" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-blue-600 outline-none">
+                    </div>
+                `}
 
                 <div class="grid grid-cols-2 gap-2">
                     <div class="space-y-1">
@@ -2428,10 +2197,16 @@ window.recalcEditBillTotal = () => {
     const eRate = Number(document.getElementById('edit-e-old')?.getAttribute('data-rate')) || 3500;
     const eCost = Math.max(0, eNew - eOld) * eRate;
 
-    const wOld = Number(document.getElementById('edit-w-old')?.value) || 0;
-    const wNew = Number(document.getElementById('edit-w-new')?.value) || 0;
-    const wRate = Number(document.getElementById('edit-w-old')?.getAttribute('data-rate')) || 15000;
-    const wCost = Math.max(0, wNew - wOld) * wRate;
+    let wCost = 0;
+    const elFixedW = document.getElementById('edit-fixed-water');
+    if (elFixedW) {
+        wCost = Number(elFixedW.value) || 0;
+    } else {
+        const wOld = Number(document.getElementById('edit-w-old')?.value) || 0;
+        const wNew = Number(document.getElementById('edit-w-new')?.value) || 0;
+        const wRate = Number(document.getElementById('edit-w-old')?.getAttribute('data-rate')) || 15000;
+        wCost = Math.max(0, wNew - wOld) * wRate;
+    }
 
     const servicesAmount = Number(document.getElementById('edit-services-amount')?.value) || 0;
     const discount = Number(document.getElementById('edit-discount')?.value) || 0;
@@ -2450,30 +2225,38 @@ window.saveEditedBill = async (year, month, billId) => {
     const eNew = Number(document.getElementById('edit-e-new').value) || 0;
     const eRate = Number(document.getElementById('edit-e-old').getAttribute('data-rate')) || 3500;
     
-    const wOld = Number(document.getElementById('edit-w-old').value) || 0;
-    const wNew = Number(document.getElementById('edit-w-new').value) || 0;
-    const wRate = Number(document.getElementById('edit-w-old').getAttribute('data-rate')) || 15000;
-
     if (eNew < eOld) return alert("Số điện mới không được nhỏ hơn số cũ!");
-    if (wNew < wOld) return alert("Số nước mới không được nhỏ hơn số cũ!");
-
     const diffE = eNew - eOld;
-    const diffW = wNew - wOld;
     const eCost = diffE * eRate;
-    const wCost = diffW * wRate;
+
+    let updatedWater = { ...bill.water };
+    const elFixedW = document.getElementById('edit-fixed-water');
+    if (elFixedW) {
+        updatedWater.cost = Number(elFixedW.value) || 0;
+    } else {
+        const wOld = Number(document.getElementById('edit-w-old').value) || 0;
+        const wNew = Number(document.getElementById('edit-w-new').value) || 0;
+        const wRate = Number(document.getElementById('edit-w-old').getAttribute('data-rate')) || 15000;
+
+        if (wNew < wOld) return alert("Số nước mới không được nhỏ hơn số cũ!");
+        const diffW = wNew - wOld;
+        const wCost = diffW * wRate;
+
+        updatedWater = { ...updatedWater, old: wOld, new: wNew, usage: diffW, rate: wRate, cost: wCost };
+    }
 
     const servicesAmount = Number(document.getElementById('edit-services-amount').value) || 0;
     const discount = Number(document.getElementById('edit-discount').value) || 0;
     const status = document.getElementById('edit-status').value;
     const isPaid = status === 'paid';
 
-    const totalAmount = Math.max(0, Math.round(roomAmount + eCost + wCost + servicesAmount - discount));
+    const totalAmount = Math.max(0, Math.round(roomAmount + eCost + (updatedWater.cost || 0) + servicesAmount - discount));
 
     const updatedData = {
         ...bill,
         roomAmount,
         electric: { old: eOld, new: eNew, usage: diffE, rate: eRate, cost: eCost },
-        water: { old: wOld, new: wNew, usage: diffW, rate: wRate, cost: wCost },
+        water: updatedWater,
         servicesAmount,
         discount,
         totalAmount,
@@ -2484,12 +2267,15 @@ window.saveEditedBill = async (year, month, billId) => {
         await update(ref(db, `bills/${year}/${month}/${billId}`), updatedData);
 
         if (bill.roomId) {
-            await update(ref(db, `rooms/${bill.roomId}`), {
+            const roomUpdates = {
                 lastElectric: eNew,
-                lastWater: wNew,
                 debtAmount: isPaid ? 0 : totalAmount,
                 debtMonth: isPaid ? null : month
-            });
+            };
+            if (updatedWater.type === 'm3' || !updatedWater.type) {
+                roomUpdates.lastWater = updatedWater.new;
+            }
+            await update(ref(db, `rooms/${bill.roomId}`), roomUpdates);
         }
 
         alert("Cập nhật hóa đơn thành công!");
@@ -2596,4 +2382,3 @@ window.closeModal = () => document.getElementById('mainModal').classList.add('hi
 
 // --- KHỞI CHẠY TẢI DỮ LIỆU BAN ĐẦU ---
 fetchAllBills();
-
