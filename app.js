@@ -20,7 +20,7 @@ let allBills = [];
 let allTransactions = [];
 let config = { electric: 3500, water: 15000, internet: 50000, garbage: 30000, parking: 100000 };
 let teleConfig = { botToken: "", chatId: "" };
-let defaultBillTemplate = "【HOMESTECH】Chào {ten}, hệ thống gửi bạn hóa đơn tiền phòng {phong} tháng {thang} với tổng số tiền cần thanh toán là: {tien}đ. Vui lòng thanh toán trước ngày 05 hàng tháng. Cảm ơn bạn!";
+let defaultBillTemplate = "【NEXA HOUSE】Chào {ten}, hệ thống gửi bạn hóa đơn tiền phòng {phong} tháng {thang} với tổng số tiền cần thanh toán là: {tien}đ. Vui lòng thanh toán trước ngày 05 hàng tháng. Cảm ơn bạn!";
 
 // --- HÀM HỖ TRỢ KIỂM TRA & LỌC DỊCH VỤ ĐIỆN / NƯỚC TRIỆT ĐỂ ---
 function isElectricOrWaterService(key) {
@@ -35,7 +35,6 @@ function isElectricOrWaterService(key) {
     return isElectric || isWater;
 }
 
-// Chuyển đổi nhãn hiển thị đơn giá nước khi chọn cách tính
 window.toggleWaterInputType = (type) => {
     const label = document.getElementById('ci-water-label');
     if (!label) return;
@@ -319,7 +318,7 @@ function renderRooms() {
     }).join('');
 }
 
-// --- 5. TÍNH TIỀN & CHỐT SỔ (TAB 3) - HỖ TRỢ 3 HÌNH THỨC NƯỚC & LỌC TRIỆT ĐỂ ---
+// --- 5. TÍNH TIỀN & CHỐT SỔ (TAB 3) ---
 function renderFinance() {
     const container = document.getElementById('view-finance'); 
     if (!container) return;
@@ -393,10 +392,9 @@ window.renderSpecificRoomFinance = (id) => {
     const waterCalcType = r.waterCalcType || 'm3';
     const memberCount = (Array.isArray(r.members) && r.members.length > 0) ? r.members.length : 1;
 
-    // Lọc bỏ triệt để: loại mọi khóa liên quan tới điện và nước khỏi danh sách dịch vụ phụ trợ
+    // Lọc triệt để các dịch vụ điện/nước khỏi danh sách phụ trợ
     const otherServices = Object.keys(config).filter(k => !isElectricOrWaterService(k));
 
-    // Xử lý khối giao diện nước theo cách tính
     let waterBoxHTML = '';
     if (waterCalcType === 'person') {
         const totalWaterCost = memberCount * rateWater;
@@ -489,11 +487,11 @@ window.renderSpecificRoomFinance = (id) => {
                     </div>
                 </div>
 
-                <!-- KHỐI NƯỚC (LINH HOẠT THEO HÌNH THỨC) -->
+                <!-- KHỐI NƯỚC (LINH HOẠT) -->
                 ${waterBoxHTML}
             </div>
 
-            <!-- PHẦN DỊCH VỤ PHỤ TRỢ (KHÔNG CÒN ĐIỆN VÀ NƯỚC) -->
+            <!-- PHẦN DỊCH VỤ PHỤ TRỢ -->
             <div class="space-y-1.5">
                 <span class="text-[10px] font-extrabold uppercase text-slate-400 ml-1">Dịch vụ phụ trợ</span>
                 <div id="serviceList" class="grid grid-cols-2 gap-2">
@@ -544,7 +542,6 @@ window.updateLiveTotal = (roomId) => {
     const diffE = Math.max(0, curE - lastE);
     const eCost = diffE * rateE;
 
-    // Xử lý tiền nước động theo loại
     let wCost = 0;
     if (elW?.hasAttribute('data-fixed')) {
         wCost = Number(elW.getAttribute('data-fixed')) || 0;
@@ -617,7 +614,6 @@ window.finalizeBill = async (roomId, isPaid) => {
     const diffE = curE - lastE;
     const electricCost = diffE * rateE;
 
-    // Tính tiền nước theo hình thức
     let diffW = 0;
     let waterCost = 0;
     let finalCurW = lastW;
@@ -1039,7 +1035,7 @@ window.exportMonthBillsCSV = () => {
     document.body.removeChild(link);
 };
 
-// --- 7. QUẢN LÝ LƯU TRÚ, CCCD, GIÁ ĐIỆN NƯỚC RIÊNG & 3 CÁCH TÍNH NƯỚC ---
+// --- 7. QUẢN LÝ LƯU TRÚ, CCCD, TẠM TRÚ & GIÁ RIÊNG ---
 function compressAndConvertImage(file, maxWidth = 1000, quality = 0.7) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -1114,6 +1110,22 @@ window.viewFullImage = (src, title = "Xem ảnh CCCD") => {
     `;
 };
 
+// Đổi nhanh trạng thái đăng ký tạm trú (Đã đăng ký <-> Chưa đăng ký)
+window.toggleMemberTamTru = async (roomId, memberIndex) => {
+    const r = rooms.find(room => room.id === roomId);
+    if (!r) return;
+
+    let members = Array.isArray(r.members) && r.members.length > 0 
+        ? [...r.members] 
+        : [{ name: r.tenantName, phone: r.tenantPhone || '', cccd: r.tenantCCCD || '', isTamTru: false }];
+
+    if (members[memberIndex]) {
+        members[memberIndex].isTamTru = !members[memberIndex].isTamTru;
+        await update(ref(db, `rooms/${roomId}`), { members });
+        openModal('detail', roomId);
+    }
+};
+
 function calculateStayDuration(startDate) {
     if (!startDate) return "N/A";
     const start = new Date(startDate);
@@ -1153,9 +1165,18 @@ function renderRoomDetail(id, container) {
                         </button>
                     </div>
 
-                    <div id="memberListInputs" class="space-y-3 max-h-[200px] overflow-y-auto pr-1">
+                    <div id="memberListInputs" class="space-y-3 max-h-[220px] overflow-y-auto pr-1">
                         <div class="member-card bg-white p-3 rounded-2xl border border-slate-200/80 space-y-2">
-                            <span class="text-[9px] font-extrabold uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Khách 1 (Trưởng phòng)</span>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[9px] font-extrabold uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Khách 1 (Trưởng phòng)</span>
+                                <div class="flex items-center gap-1">
+                                    <label class="text-[9px] font-semibold text-slate-500">Tạm trú:</label>
+                                    <select class="m-tamtru p-1 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 outline-none">
+                                        <option value="false">Chưa ĐK</option>
+                                        <option value="true">Đã ĐK</option>
+                                    </select>
+                                </div>
+                            </div>
                             <input type="text" class="m-name w-full p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold outline-none" placeholder="Họ và tên (*)">
                             <div class="grid grid-cols-2 gap-2">
                                 <input type="tel" class="m-phone p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold outline-none" placeholder="Số điện thoại (*)">
@@ -1215,7 +1236,6 @@ function renderRoomDetail(id, container) {
                             </div>
                         </div>
 
-                        <!-- CẤU HÌNH ĐƠN GIÁ ĐIỆN & 3 HÌNH THỨC NƯỚC RIÊNG CHO PHÒNG -->
                         <div class="bg-indigo-50/70 p-2.5 rounded-2xl border border-indigo-100 space-y-2">
                             <span class="text-[9px] font-extrabold uppercase text-indigo-700 ml-1">Đơn giá điện & nước riêng phòng này</span>
                             <div class="grid grid-cols-2 gap-2">
@@ -1226,14 +1246,14 @@ function renderRoomDetail(id, container) {
                                 <div>
                                     <label class="text-[8px] font-bold text-slate-400 uppercase ml-1">Cách tính nước</label>
                                     <select id="ci-water-calc-type" onchange="toggleWaterInputType(this.value)" class="w-full p-2 bg-white rounded-xl border border-indigo-200 text-xs font-bold text-slate-700 outline-none">
-                                        <option value="m3">Theo khối (m³)</option>
-                                        <option value="person">Theo đầu người</option>
-                                        <option value="room">Cố định theo phòng</option>
+                                        <option value="m3" ${curCalcType === 'm3' ? 'selected' : ''}>Theo khối (m³)</option>
+                                        <option value="person" ${curCalcType === 'person' ? 'selected' : ''}>Theo đầu người</option>
+                                        <option value="room" ${curCalcType === 'room' ? 'selected' : ''}>Cố định theo phòng</option>
                                     </select>
                                 </div>
                             </div>
                             <div>
-                                <label id="ci-water-label" class="text-[8px] font-bold text-slate-400 uppercase ml-1">Giá nước (đ/m³)</label>
+                                <label id="ci-water-label" class="text-[8px] font-bold text-slate-400 uppercase ml-1">${curCalcType === 'person' ? 'Giá nước (đ/người/tháng)' : (curCalcType === 'room' ? 'Giá nước trọn gói (đ/phòng/tháng)' : 'Giá nước (đ/m³)')}</label>
                                 <input type="number" id="ci-rate-water" value="${defaultWater}" class="w-full p-2 bg-white rounded-xl border border-indigo-200 text-xs font-black text-blue-600 outline-none">
                             </div>
                         </div>
@@ -1289,7 +1309,16 @@ function renderRoomDetail(id, container) {
 
                     <div id="memberListInputs" class="space-y-3 max-h-[200px] overflow-y-auto pr-1">
                         <div class="member-card bg-white p-3 rounded-2xl border border-slate-200/80 space-y-2">
-                            <span class="text-[9px] font-extrabold uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Khách 1 (Người đại diện cọc)</span>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[9px] font-extrabold uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Khách 1 (Người đại diện cọc)</span>
+                                <div class="flex items-center gap-1">
+                                    <label class="text-[9px] font-semibold text-slate-500">Tạm trú:</label>
+                                    <select class="m-tamtru p-1 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 outline-none">
+                                        <option value="false">Chưa ĐK</option>
+                                        <option value="true">Đã ĐK</option>
+                                    </select>
+                                </div>
+                            </div>
                             <input type="text" class="m-name w-full p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold outline-none" placeholder="Họ và tên (*)" value="${bk.name || ''}">
                             <div class="grid grid-cols-2 gap-2">
                                 <input type="tel" class="m-phone p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold outline-none" placeholder="Số điện thoại (*)" value="${bk.phone || ''}">
@@ -1343,7 +1372,6 @@ function renderRoomDetail(id, container) {
                             </div>
                         </div>
 
-                        <!-- CẤU HÌNH ĐƠN GIÁ ĐIỆN & 3 HÌNH THỨC NƯỚC RIÊNG -->
                         <div class="bg-indigo-50/70 p-2.5 rounded-2xl border border-indigo-100 space-y-2">
                             <span class="text-[9px] font-extrabold uppercase text-indigo-700 ml-1">Đơn giá điện nước áp dụng riêng phòng này</span>
                             <div class="grid grid-cols-2 gap-2">
@@ -1354,14 +1382,14 @@ function renderRoomDetail(id, container) {
                                 <div>
                                     <label class="text-[8px] font-bold text-slate-400 uppercase ml-1">Cách tính nước</label>
                                     <select id="ci-water-calc-type" onchange="toggleWaterInputType(this.value)" class="w-full p-2 bg-white rounded-xl border border-indigo-200 text-xs font-bold text-slate-700 outline-none">
-                                        <option value="m3">Theo khối (m³)</option>
-                                        <option value="person">Theo đầu người</option>
-                                        <option value="room">Cố định theo phòng</option>
+                                        <option value="m3" ${curCalcType === 'm3' ? 'selected' : ''}>Theo khối (m³)</option>
+                                        <option value="person" ${curCalcType === 'person' ? 'selected' : ''}>Theo đầu người</option>
+                                        <option value="room" ${curCalcType === 'room' ? 'selected' : ''}>Cố định theo phòng</option>
                                     </select>
                                 </div>
                             </div>
                             <div>
-                                <label id="ci-water-label" class="text-[8px] font-bold text-slate-400 uppercase ml-1">Giá nước (đ/m³)</label>
+                                <label id="ci-water-label" class="text-[8px] font-bold text-slate-400 uppercase ml-1">${curCalcType === 'person' ? 'Giá nước (đ/người/tháng)' : (curCalcType === 'room' ? 'Giá nước trọn gói (đ/phòng/tháng)' : 'Giá nước (đ/m³)')}</label>
                                 <input type="number" id="ci-rate-water" value="${defaultWater}" class="w-full p-2 bg-white rounded-xl border border-indigo-200 text-xs font-black text-blue-600 outline-none">
                             </div>
                         </div>
@@ -1379,7 +1407,7 @@ function renderRoomDetail(id, container) {
     } else if (r.status === 'occupied') {
         const memberList = Array.isArray(r.members) && r.members.length > 0 
             ? r.members 
-            : [{ name: r.tenantName, phone: r.tenantPhone, cccd: r.tenantCCCD, license: r.tenantLicense, hometown: r.tenantHometown }];
+            : [{ name: r.tenantName, phone: r.tenantPhone, cccd: r.tenantCCCD, license: r.tenantLicense, hometown: r.tenantHometown, isTamTru: false }];
 
         const cccdFront = r.cccdFront || "";
         const cccdBack = r.cccdBack || "";
@@ -1395,8 +1423,10 @@ function renderRoomDetail(id, container) {
                     </button>
                 </div>
 
-                <div class="space-y-2 max-h-[180px] overflow-y-auto pr-1">
-                    ${memberList.map((m, idx) => `
+                <div class="space-y-2 max-h-[190px] overflow-y-auto pr-1">
+                    ${memberList.map((m, idx) => {
+                        const isTamTru = m.isTamTru === true || m.isTamTru === "true";
+                        return `
                         <div class="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm space-y-1.5 text-xs">
                             <div class="flex justify-between items-start">
                                 <div class="flex items-center gap-2">
@@ -1405,9 +1435,15 @@ function renderRoomDetail(id, container) {
                                     </span>
                                     <div>
                                         <h5 class="font-extrabold text-slate-800">${m.name || '---'}</h5>
-                                        <span class="text-[8px] font-black uppercase px-1.5 py-0.2 rounded ${idx === 0 ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'}">
-                                            ${idx === 0 ? 'Trưởng phòng (Ký HĐ)' : 'Ở cùng'}
-                                        </span>
+                                        <div class="flex items-center gap-1 mt-0.5">
+                                            <span class="text-[8px] font-black uppercase px-1.5 py-0.2 rounded ${idx === 0 ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'}">
+                                                ${idx === 0 ? 'Trưởng phòng' : 'Ở cùng'}
+                                            </span>
+                                            <!-- Nút đổi nhanh tình trạng tạm trú (Click để chuyển đổi) -->
+                                            <button onclick="toggleMemberTamTru('${id}', ${idx})" title="Bấm để đổi trạng thái tạm trú" class="text-[8px] font-black uppercase px-1.5 py-0.2 rounded transition-all cursor-pointer ${isTamTru ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}">
+                                                <i class="fa-solid ${isTamTru ? 'fa-circle-check' : 'fa-clock'} mr-0.5"></i> ${isTamTru ? 'Đã tạm trú' : 'Chưa tạm trú'}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 ${idx > 0 ? `
@@ -1424,7 +1460,7 @@ function renderRoomDetail(id, container) {
                                 <div><span class="text-slate-400">Quê:</span> <span class="font-semibold">${m.hometown || '---'}</span></div>
                             </div>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
 
                 <!-- ẢNH CCCD LƯU TRỮ -->
@@ -1509,9 +1545,18 @@ window.addMemberRow = () => {
     div.innerHTML = `
         <div class="flex justify-between items-center border-b border-slate-100 pb-1.5">
             <span class="text-[9px] font-extrabold uppercase text-slate-500 bg-slate-100 px-2 py-0.5 rounded">Khách ${count} (Ở cùng)</span>
-            <button type="button" onclick="this.closest('.member-card').remove()" class="text-slate-300 hover:text-rose-500 text-xs">
-                <i class="fa-solid fa-trash-can"></i>
-            </button>
+            <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1">
+                    <label class="text-[9px] font-semibold text-slate-500">Tạm trú:</label>
+                    <select class="m-tamtru p-1 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 outline-none">
+                        <option value="false">Chưa ĐK</option>
+                        <option value="true">Đã ĐK</option>
+                    </select>
+                </div>
+                <button type="button" onclick="this.closest('.member-card').remove()" class="text-slate-300 hover:text-rose-500 text-xs">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
         </div>
         <input type="text" class="m-name w-full p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold outline-none" placeholder="Họ và tên (*)">
         <div class="grid grid-cols-2 gap-2">
@@ -1536,9 +1581,10 @@ window.saveMultipleMembersCheckIn = async (roomId) => {
         const cccd = card.querySelector('.m-cccd').value.trim();
         const license = card.querySelector('.m-license').value.trim();
         const hometown = card.querySelector('.m-hometown').value.trim();
+        const isTamTru = card.querySelector('.m-tamtru')?.value === "true";
 
         if (name) {
-            members.push({ name, phone, cccd, license, hometown });
+            members.push({ name, phone, cccd, license, hometown, isTamTru });
         }
     });
 
@@ -1598,6 +1644,13 @@ window.openAddSingleMemberModal = (roomId) => {
                 <input type="text" id="sm-license" placeholder="Biển số xe" class="p-2.5 bg-slate-50 rounded-xl border text-xs font-semibold outline-none">
                 <input type="text" id="sm-hometown" placeholder="Quê quán" class="p-2.5 bg-slate-50 rounded-xl border text-xs font-semibold outline-none">
             </div>
+            <div class="space-y-1">
+                <label class="text-[9px] font-bold text-slate-500 uppercase ml-1">Tình trạng đăng ký tạm trú</label>
+                <select id="sm-tamtru" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none">
+                    <option value="false">Chưa đăng ký tạm trú</option>
+                    <option value="true">Đã đăng ký tạm trú</option>
+                </select>
+            </div>
             <button onclick="saveSingleMemberToRoom('${roomId}')" class="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase shadow-md">Thêm thành viên</button>
             <button onclick="openModal('detail', '${roomId}')" class="w-full py-1 text-slate-400 font-semibold text-xs">Quay lại</button>
         </div>
@@ -1610,12 +1663,13 @@ window.saveSingleMemberToRoom = async (roomId) => {
     const cccd = document.getElementById('sm-cccd').value.trim();
     const license = document.getElementById('sm-license').value.trim();
     const hometown = document.getElementById('sm-hometown').value.trim();
+    const isTamTru = document.getElementById('sm-tamtru').value === "true";
 
     if (!name) return alert("Vui lòng nhập họ tên thành viên mới!");
 
     const r = rooms.find(room => room.id === roomId);
-    let members = Array.isArray(r.members) ? [...r.members] : [{ name: r.tenantName, phone: r.tenantPhone || '' }];
-    members.push({ name, phone, cccd, license, hometown });
+    let members = Array.isArray(r.members) ? [...r.members] : [{ name: r.tenantName, phone: r.tenantPhone || '', isTamTru: false }];
+    members.push({ name, phone, cccd, license, hometown, isTamTru });
 
     await update(ref(db, `rooms/${roomId}`), { members });
     alert(`Đã thêm ${name} vào phòng!`);
