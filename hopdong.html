@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soạn Thảo Hợp Đồng Thuê Trọ - NEXA HOUSE</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .page-a4 {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm 20mm;
+            margin: 15px auto;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-radius: 8px;
+        }
+        [contenteditable="true"]:hover {
+            outline: 1px dashed #6366f1;
+            background-color: #f8fafc;
+        }
+        [contenteditable="true"]:focus {
+            outline: 2px solid #4f46e5;
+            background-color: #ffffff;
+        }
+        @media print {
+            body { background: white !important; padding: 0 !important; margin: 0 !important; }
+            .no-print { display: none !important; }
+            .page-a4 {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 15mm !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+            }
+            [contenteditable="true"] { outline: none !important; background: transparent !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen py-4 antialiased">
+
+    <!-- THANH CÔNG CỤ ĐIỀU KHIỂN (ẨN KHI IN) -->
+    <header class="no-print sticky top-3 z-30 max-w-4xl mx-auto px-4 mb-4">
+        <div class="bg-white/95 backdrop-blur shadow-lg border border-slate-200 p-3 rounded-2xl flex flex-wrap justify-between items-center gap-2">
+            <div class="flex items-center gap-2">
+                <a href="./index.html" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại
+                </a>
+                <span class="text-xs font-black text-indigo-700 uppercase tracking-wider pl-2 border-l border-slate-200" id="headerRoomTitle">HỢP ĐỒNG PHÒNG ...</span>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <span class="text-[11px] text-slate-400 italic hidden sm:inline">* Nhấp chuột trực tiếp vào văn bản để chỉnh sửa</span>
+                <button onclick="saveContractToFirebase()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-floppy-disk"></i> Lưu hợp đồng
+                </button>
+                <button onclick="window.print()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-print"></i> In / Xuất PDF
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- NỘI DUNG HỢP ĐỒNG (TRANG GIẤY CHUẨN IN VÀ SOẠN THẢO) -->
+    <main class="page-a4 text-[13px] leading-relaxed space-y-4" id="contractContent" contenteditable="true">
+        <div class="text-center space-y-1">
+            <p class="font-bold text-xs uppercase tracking-wider">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+            <p class="font-bold text-xs underline">Độc lập - Tự do - Hạnh phúc</p>
+            <h1 class="text-lg font-black uppercase pt-3 text-slate-900 tracking-tight">HỢP ĐỒNG THUÊ PHÒNG TRỌ</h1>
+            <p class="text-[12px] italic text-slate-500" id="contractDateLine">Hôm nay, ngày ... tháng ... năm ..., tại địa chỉ nhà trọ.</p>
+        </div>
+
+        <div class="space-y-1.5 pt-2">
+            <p class="font-bold text-slate-900 uppercase text-xs border-b pb-1">BÊN CHO THUÊ (BÊN A):</p>
+            <div class="grid grid-cols-2 gap-1 text-[12px]">
+                <p><b>Đại diện quản lý:</b> Bà NGUYỄN THỊ TRÚC PHƯƠNG</p>
+                <p><b>Số điện thoại:</b> 0794.76.76.39</p>
+                <p class="col-span-2" id="contractZoneLine"><b>Địa chỉ nhà trọ:</b> 41/2 Đinh Tiên Hoàng, Phường Xuân Hương, Đà lạt, Lâm Đồng</p>
+            </div>
+        </div>
+
+        <div class="space-y-1.5 pt-1">
+            <p class="font-bold text-slate-900 uppercase text-xs border-b pb-1">BÊN THUÊ PHÒNG (BÊN B):</p>
+            <div class="grid grid-cols-2 gap-1 text-[12px]">
+                <p><b>Họ và tên:</b> <span class="uppercase font-bold text-slate-900" id="b-name">...................................................</span></p>
+                <p><b>Số điện thoại:</b> <span id="b-phone">...................................................</span></p>
+                <p><b>Số CCCD/CMND:</b> <span id="b-cccd">...................................................</span></p>
+                <p><b>Biển số xe:</b> <span id="b-license">Không có</span></p>
+                <p class="col-span-2"><b>Quê quán / Thường trú:</b> <span id="b-hometown">...........................................................................................</span></p>
+            </div>
+
+            <div id="contractOtherMembers" class="pt-1"></div>
+        </div>
+
+        <div class="space-y-2 text-[12px] pt-1">
+            <p class="font-bold text-slate-900 uppercase text-xs border-b pb-1">CÁC ĐIỀU KHOẢN THỎA THUẬN:</p>
+            <p><b>Điều 1: Thông tin phòng thuê</b><br>
+            Bên A đồng ý cho Bên B thuê phòng số <b id="term-roomNum">...</b> thuộc <span id="term-zone">...</span> để ở.</p>
+
+            <p><b>Điều 2: Giá thuê và Tiền đặt cọc</b><br>
+            - Giá thuê phòng: <b id="term-price">... VNĐ/tháng</b>.<br>
+            - Tiền cọc phòng: <b id="term-deposit">... VNĐ</b>. Tiền cọc sẽ được hoàn trả cho Bên B sau khi thanh lý hợp đồng và khấu trừ các chi phí phát sinh, hư hỏng (nếu có).</p>
+
+            <p><b>Điều 3: Đơn giá dịch vụ áp dụng riêng cho phòng</b><br>
+            - Tiền điện: <b id="term-electric">... VNĐ/kWh</b> (Chỉ số đồng hồ bàn giao bắt đầu: <b id="term-eStart">...</b> kWh).<br>
+            - Tiền nước: <b id="term-water">... VNĐ/m³</b> (Chỉ số đồng hồ bàn giao bắt đầu: <b id="term-wStart">...</b> m³).<br>
+            - Các dịch vụ khác (Wifi, rác, vệ sinh...) tính theo thỏa thuận ban đầu của nhà trọ.</p>
+
+            <p><b>Điều 4: Kỳ hạn thanh toán</b><br>
+            Tiền thuê phòng và tiền điện nước được thanh toán định kỳ mỗi tháng một lần từ ngày 01 đến ngày 05 hàng tháng.</p>
+
+            <p><b>Điều 5: Trách nhiệm và quyền hạn</b><br>
+            - Bên B có trách nhiệm sử dụng phòng đúng mục đích, bảo quản tài sản, đăng ký tạm trú theo quy định của pháp luật và không chứa các chất gây cháy nổ, chất cấm.<br>
+            - Khi có nhu cầu chuyển đi hoặc chấm dứt hợp đồng, Bên B phải báo trước cho Bên A ít nhất 30 ngày.</p>
+
+            <p><b>Điều 6: Điều khoản thi hành</b><br>
+            Hợp đồng được lập thành 02 bản có giá trị pháp lý như nhau, mỗi bên giữ 01 bản để theo dõi và thực hiện.</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 pt-8 text-center text-[12px]">
+            <div class="space-y-16">
+                <p class="font-bold uppercase">ĐẠI DIỆN BÊN B (BÊN THUÊ)</p>
+                <p class="font-bold uppercase" id="sign-b-name"></p>
+            </div>
+            <div class="space-y-16">
+                <p class="font-bold uppercase">ĐẠI DIỆN BÊN A (BÊN CHO THUÊ)</p>
+                <p class="font-bold uppercase">NGUYỄN THỊ TRÚC PHƯƠNG</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- KẾT NỐI FIREBASE ĐỂ TỰ ĐỘNG NẠP DỮ LIỆU -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD0fDuyWWC51ih0qfl3QBAFJY6NOC-5hTA",
+            authDomain: "quanlyphongtro-4bef6.firebaseapp.com",
+            databaseURL: "https://quanlyphongtro-4bef6-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "quanlyphongtro-4bef6",
+            storageBucket: "quanlyphongtro-4bef6.firebasestorage.app",
+            messagingSenderId: "484406201867",
+            appId: "1:484406201867:web:2abef5338a77487776010e",
+            measurementId: "G-SJZ1SE8JF5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('roomId');
+
+        let currentRoom = null;
+        let systemConfig = { electric: 3500, water: 15000 };
+
+        onValue(ref(db, 'settings'), (snapshot) => {
+            if (snapshot.exists()) systemConfig = snapshot.val();
+        });
+
+        if (!roomId) {
+            alert("Không tìm thấy thông tin phòng! Đang quay lại trang chủ...");
+            window.location.href = './index.html';
+        } else {
+            onValue(ref(db, `rooms/${roomId}`), (snapshot) => {
+                const r = snapshot.val();
+                if (!r) return;
+                currentRoom = r;
+
+                document.getElementById('headerRoomTitle').innerText = `HỢP ĐỒNG PHÒNG ${r.roomNumber}`;
+
+                if (r.customContractHTML) {
+                    document.getElementById('contractContent').innerHTML = r.customContractHTML;
+                    return;
+                }
+
+                const memberList = Array.isArray(r.members) && r.members.length > 0
+                    ? r.members
+                    : [{ name: r.tenantName, phone: r.tenantPhone, cccd: r.tenantCCCD, license: r.tenantLicense, hometown: r.tenantHometown }];
+
+                const primaryTenant = memberList[0] || {};
+                const others = memberList.slice(1);
+                const startDate = new Date(r.checkInDate || Date.now());
+
+                document.getElementById('contractDateLine').innerText = `Hôm nay, ngày ${startDate.getDate()} tháng ${startDate.getMonth() + 1} năm ${startDate.getFullYear()}, tại địa chỉ nhà trọ.`;
+                document.getElementById('contractZoneLine').innerHTML = `<b>Địa chỉ nhà trọ:</b> Khu vực ${r.zone || 'Tòa nhà HOMESTECH'}`;
+
+                document.getElementById('b-name').innerText = primaryTenant.name || '.....................................';
+                document.getElementById('b-phone').innerText = primaryTenant.phone || '.....................................';
+                document.getElementById('b-cccd').innerText = primaryTenant.cccd || '.....................................';
+                document.getElementById('b-license').innerText = primaryTenant.license || 'Không có';
+                document.getElementById('b-hometown').innerText = primaryTenant.hometown || '.....................................................................';
+
+                if (others.length > 0) {
+                    document.getElementById('contractOtherMembers').innerHTML = `
+                        <div class="mt-1 pt-1 border-t border-dashed">
+                            <p class="font-bold text-[12px] text-slate-700">Các thành viên ở cùng phòng (${others.length} người):</p>
+                            <ul class="list-disc pl-5 text-[11px] space-y-0.5 mt-0.5">
+                                ${others.map(o => `<li><b>${o.name}</b> - SĐT: ${o.phone || '---'} - CCCD: ${o.cccd || '---'} (Xe: ${o.license || 'Không có'})</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('term-roomNum').innerText = r.roomNumber;
+                document.getElementById('term-zone').innerText = r.zone || 'Khu nhà trọ';
+                document.getElementById('term-price').innerText = `${Number(r.basePrice || 0).toLocaleString()} VNĐ/tháng`;
+                document.getElementById('term-deposit').innerText = `${Number(r.depositAmount || 0).toLocaleString()} VNĐ`;
+
+                const rateE = Number(r.electricRate || systemConfig.electric || 3500);
+                const rateW = Number(r.waterRate || systemConfig.water || 15000);
+
+                document.getElementById('term-electric').innerText = `${rateE.toLocaleString()} VNĐ/kWh`;
+                document.getElementById('term-eStart').innerText = r.lastElectric || 0;
+                document.getElementById('term-water').innerText = `${rateW.toLocaleString()} VNĐ/m³`;
+                document.getElementById('term-wStart').innerText = r.lastWater || 0;
+
+                document.getElementById('sign-b-name').innerText = primaryTenant.name || '';
+            });
+        }
+
+        window.saveContractToFirebase = async () => {
+            if (!roomId) return;
+            const customHTML = document.getElementById('contractContent').innerHTML;
+            try {
+                await update(ref(db, `rooms/${roomId}`), {
+                    customContractHTML: customHTML,
+                    contractUpdatedAt: Date.now()
+                });
+                alert("Đã lưu nội dung hợp đồng đã chỉnh sửa thành công!");
+            } catch (e) {
+                alert("Lỗi lưu hợp đồng: " + e.message);
+            }
+        };
+    </script>
+</body>
+</html>
